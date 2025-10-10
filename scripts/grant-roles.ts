@@ -74,7 +74,7 @@ async function main() {
   // Grant minter role if not already granted
   if (!isMinter) {
     console.log(`\n✅ Granting minter role to pool...`);
-    const mintTx = await stablecoin.grantMinterRole(poolAddress);
+    const mintTx = await stablecoin.grantMintRole(poolAddress);
     console.log(`  Transaction hash: ${mintTx.hash}`);
     await mintTx.wait();
     console.log(`  ✓ Minter role granted!`);
@@ -85,7 +85,7 @@ async function main() {
   // Grant burner role if not already granted
   if (!isBurner) {
     console.log(`\n✅ Granting burner role to pool...`);
-    const burnTx = await stablecoin.grantBurnerRole(poolAddress);
+    const burnTx = await stablecoin.grantBurnRole(poolAddress);
     console.log(`  Transaction hash: ${burnTx.hash}`);
     await burnTx.wait();
     console.log(`  ✓ Burner role granted!`);
