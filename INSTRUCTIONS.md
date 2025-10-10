@@ -222,6 +222,8 @@ Expected mint: ~401.388 OBSC
 
 ## 🏗️ Phase 2: Oracle & Stablecoin on TO Chain (Avalanche Fuji)
 
+**💡 Note:** While the TO chain (destination) also gets an oracle in this workshop for consistency, in production scenarios, a destination-only chain doesn't strictly require oracle integration since it only receives tokens via CCIP, not collateral-based minting. However, deploying it allows testing minting on both chains.
+
 ### Step 2.1: Deploy Oracle on TO Chain
 ```bash
 npx hardhat run scripts/deploy-oracle.ts --network avalanche-fuji
@@ -518,17 +520,22 @@ npx hardhat applyChainUpdates \
 # Return to project root
 cd ../../../../
 
-# Check your stablecoin balance
-npx hardhat console --network avalanche-fuji
-```
+# Load stablecoin address
+export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" .env | cut -d= -f2)
 
-```javascript
-// In Hardhat console:
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "0x[your-STABLECOIN_CONTRACT_ADDRESS_TO]");
+# Check your balance on TO chain
+npx hardhat console --network avalanche-fuji << EOF
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_TO");
 const [signer] = await ethers.getSigners();
 const balance = await stablecoin.balanceOf(signer.address);
 console.log("Balance:", ethers.formatEther(balance), "OBSC");
-.exit
+process.exit(0);
+EOF
+```
+
+**Expected Output:**
+```
+Balance: 385.91 OBSC
 ```
 
 ### Step 5.2: Execute Cross-Chain Transfer
@@ -575,17 +582,24 @@ Check status: https://ccip.chain.link/tx/0x[transaction-hash]
 # Return to project root
 cd ../../../../
 
-# Check balance on destination chain
-npx hardhat console --network arbitrum-sepolia
-```
+# Load stablecoin address
+export STABLECOIN_FROM=$(grep "^STABLECOIN_CONTRACT_ADDRESS_FROM=" .env | cut -d= -f2)
 
-```javascript
-// In Hardhat console:
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "0x[your-STABLECOIN_CONTRACT_ADDRESS_FROM]");
+# Check balance on destination chain (Arbitrum Sepolia)
+npx hardhat console --network arbitrum-sepolia << EOF
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_FROM");
 const [signer] = await ethers.getSigners();
 const balance = await stablecoin.balanceOf(signer.address);
 console.log("Balance:", ethers.formatEther(balance), "OBSC");
-.exit
+console.log("✅ Tokens successfully received from Avalanche Fuji!");
+process.exit(0);
+EOF
+```
+
+**Expected Output:**
+```
+Balance: 10.0 OBSC
+✅ Tokens successfully received from Avalanche Fuji!
 ```
 
 **✅ Success!** You've completed a cross-chain transfer of oracle-backed stablecoins!
@@ -607,16 +621,18 @@ npx hardhat run scripts/update-oracle.ts --network arbitrum-sepolia
 
 ### Check Collateralization Status
 ```bash
-npx hardhat console --network arbitrum-sepolia
-```
+# Load stablecoin address from .env
+export STABLECOIN_FROM=$(grep "^STABLECOIN_CONTRACT_ADDRESS_FROM=" .env | cut -d= -f2)
 
-```javascript
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "0x[your-address]");
+# Check collateralization
+npx hardhat console --network arbitrum-sepolia << EOF
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_FROM");
 const [collateral, supply, ratio] = await stablecoin.getCollateralizationStatus();
 console.log("Collateral:", ethers.formatEther(collateral), "USD");
 console.log("Supply:", ethers.formatEther(supply), "OBSC");
 console.log("Ratio:", Number(ratio) / 100, "%");
-.exit
+process.exit(0);
+EOF
 ```
 
 ---
@@ -759,5 +775,50 @@ npm install
 cd smart-contract-examples/ccip/cct/hardhat
 npm install
 ```
+
+---
+
+## 📚 Additional Resources
+
+### Chainlink Documentation
+- **Data Streams:** https://docs.chain.link/data-streams
+- **CCIP:** https://docs.chain.link/ccip
+- **Price Feeds:** https://docs.chain.link/data-feeds
+
+### Explorers
+- **CCIP Explorer:** https://ccip.chain.link/
+- **Arbitrum Sepolia:** https://sepolia.arbiscan.io/
+- **Avalanche Fuji:** https://testnet.snowtrace.io/
+
+### Support
+- **Discord:** https://discord.gg/chainlink
+- **Stack Overflow:** Tag your question with `chainlink`
+- **GitHub Issues:** https://github.com/smartcontractkit/chainlink
+
+---
+
+## 🎉 Congratulations!
+
+You've successfully built and deployed a production-ready oracle-backed stablecoin with cross-chain CCIP integration!
+
+**What You've Learned:**
+- ✅ Integrating Chainlink Data Streams for real-time price feeds
+- ✅ Building collateral-backed stablecoins with oracle integration
+- ✅ Deploying CCIP TokenPools for cross-chain transfers
+- ✅ Configuring TokenAdminRegistry and cross-chain routes
+- ✅ Executing Burn & Mint cross-chain token transfers
+- ✅ Building chain-agnostic smart contract systems
+
+**Next Steps:**
+- Adapt this to other EVM chain pairs
+- Add rate limiting for security
+- Implement emergency pause functionality
+- Add liquidation mechanisms for under-collateralization
+- Build a frontend interface for your stablecoin
+
+**Share Your Success:**
+- Tweet about your workshop completion with #Chainlink
+- Share your deployment addresses and explorer links
+- Help others in the community who are learning
 
 ---
