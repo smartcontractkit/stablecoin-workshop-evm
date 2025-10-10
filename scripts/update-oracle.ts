@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { getChainlinkConfig } from "./utils/config";
+import { getChainlinkConfig, getEnvAddress, suggestEnvVarName } from "./utils/config";
 import { createClient, decodeReport } from "@chainlink/data-streams-sdk";
 import * as dotenv from "dotenv";
 
@@ -13,25 +13,29 @@ async function main() {
     throw new Error("Missing Data Streams credentials in .env file");
   }
 
-  if (!process.env.ORACLE_CONTRACT_ADDRESS) {
-    throw new Error("Missing ORACLE_CONTRACT_ADDRESS in .env file. Deploy oracle first.");
-  }
-
   // Get network-specific config
   const chainConfig = getChainlinkConfig(network.name);
+  
+  // Read oracle address with FROM/TO pattern support
+  const oracleAddress = getEnvAddress("ORACLE_CONTRACT_ADDRESS", network.name);
+  if (!oracleAddress) {
+    const suggestedVar = suggestEnvVarName("ORACLE_CONTRACT_ADDRESS", network.name);
+    throw new Error(
+      `Missing oracle address. Set ${suggestedVar} in .env file (or generic ORACLE_CONTRACT_ADDRESS)`
+    );
+  }
 
   console.log(`Network: ${chainConfig.name}`);
-  console.log(`Oracle: ${process.env.ORACLE_CONTRACT_ADDRESS}`);
+  console.log(`Oracle: ${oracleAddress}`);
   console.log(`Feed ID: ${chainConfig.feedId}\n`);
 
   // Initialize Data Streams client
   console.log("📡 Initializing Data Streams client...");
   const client = createClient({
     apiKey: process.env.DATASTREAMS_API_KEY!,
-    userId: process.env.DATASTREAMS_API_KEY!,
     userSecret: process.env.DATASTREAMS_API_SECRET!,
     endpoint: process.env.DATASTREAMS_REST_URL || "https://api.testnet-dataengine.chain.link",
-    wsEndpoint: "wss://ws.testnet-dataengine.chain.link",
+    wsEndpoint: process.env.DATASTREAMS_WS_URL || "wss://ws.testnet-dataengine.chain.link",
   });
 
   // Fetch latest report
@@ -56,7 +60,7 @@ async function main() {
   ];
 
   const oracle = new ethers.Contract(
-    process.env.ORACLE_CONTRACT_ADDRESS,
+    oracleAddress,
     oracleABI,
     signer
   );

@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { getChainlinkConfig } from "./utils/config";
+import { getChainlinkConfig, getEnvAddress, suggestEnvVarName } from "./utils/config";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -7,15 +7,21 @@ dotenv.config();
 async function main() {
   console.log("💰 Funding Oracle with LINK tokens...\n");
 
-  if (!process.env.ORACLE_CONTRACT_ADDRESS) {
-    throw new Error("Missing ORACLE_CONTRACT_ADDRESS in .env file");
+  const oracleAddress = getEnvAddress("ORACLE_CONTRACT_ADDRESS", network.name);
+  
+  if (!oracleAddress) {
+    const suggestedName = suggestEnvVarName("ORACLE_CONTRACT_ADDRESS", network.name);
+    throw new Error(
+      `Missing oracle address in .env file.\n` +
+      `Expected: ${suggestedName}`
+    );
   }
 
   const chainConfig = getChainlinkConfig(network.name);
   const [signer] = await ethers.getSigners();
 
   console.log(`Network: ${chainConfig.name}`);
-  console.log(`Oracle: ${process.env.ORACLE_CONTRACT_ADDRESS}`);
+  console.log(`Oracle: ${oracleAddress}`);
   console.log(`Funder: ${signer.address}\n`);
 
   // LINK token contract
@@ -45,13 +51,13 @@ async function main() {
   const actualAmount = funderBalance < amountToSend ? funderBalance : amountToSend;
 
   console.log(`\n📤 Transferring ${ethers.formatEther(actualAmount)} LINK to oracle...`);
-  const tx = await linkToken.transfer(process.env.ORACLE_CONTRACT_ADDRESS, actualAmount);
+  const tx = await linkToken.transfer(oracleAddress, actualAmount);
   
   console.log(`⏳ Transaction: ${tx.hash}`);
   await tx.wait();
 
   // Check oracle's new balance
-  const oracleBalance = await linkToken.balanceOf(process.env.ORACLE_CONTRACT_ADDRESS);
+  const oracleBalance = await linkToken.balanceOf(oracleAddress);
   console.log(`✅ Oracle LINK balance: ${ethers.formatEther(oracleBalance)} LINK\n`);
 
   console.log("🎉 Funding complete! Now run: npm run update:oracle");

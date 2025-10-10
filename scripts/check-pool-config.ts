@@ -13,14 +13,20 @@ dotenv.config();
  * - Cross-chain routes
  * 
  * Usage:
- *   npx hardhat run scripts/check-pool-config.ts --network arbitrumSepolia
- *   npx hardhat run scripts/check-pool-config.ts --network avalancheFuji
+ *   npx hardhat run scripts/check-pool-config.ts --network sepolia
+ *   npx hardhat run scripts/check-pool-config.ts --network baseSepolia
+ * 
+ * Required Environment Variables:
+ *   - CHAIN_FROM: Source chain network name
+ *   - CHAIN_TO: Destination chain network name
+ *   - STABLECOIN_ADDRESS_FROM / STABLECOIN_ADDRESS_TO
+ *   - TOKEN_POOL_ADDRESS_FROM / TOKEN_POOL_ADDRESS_TO (optional)
  */
 
 async function main() {
   const [signer] = await ethers.getSigners();
   const network = await ethers.provider.getNetwork();
-  const networkName = network.name === "unknown" ? "arbitrumSepolia" : network.name;
+  const networkName = network.name === "unknown" ? process.env.CHAIN_FROM || "unknown" : network.name;
 
   console.log(`\n========== TokenPool Configuration Check ==========`);
   console.log(`Network: ${networkName}`);
@@ -28,22 +34,40 @@ async function main() {
   console.log(`Signer: ${signer.address}`);
   console.log(`===================================================\n`);
 
-  // Determine which addresses to use based on network
-  let tokenAddress: string;
-  let poolAddress: string | undefined;
+  // Get chain role configuration
+  const chainFrom = process.env.CHAIN_FROM;
+  const chainTo = process.env.CHAIN_TO;
 
-  if (networkName.includes("arbitrum") || network.chainId === 421614n) {
-    tokenAddress = process.env.STABLECOIN_ADDRESS_ARBITRUM || process.env.STABLECOIN_ADDRESS || "";
-    poolAddress = process.env.TOKEN_POOL_ADDRESS_ARBITRUM || process.env.TOKEN_POOL_ADDRESS;
-  } else if (networkName.includes("fuji") || networkName.includes("avalanche") || network.chainId === 43113n) {
-    tokenAddress = process.env.STABLECOIN_ADDRESS_FUJI || process.env.STABLECOIN_ADDRESS || "";
-    poolAddress = process.env.TOKEN_POOL_ADDRESS_FUJI || process.env.TOKEN_POOL_ADDRESS;
-  } else {
-    throw new Error(`Unsupported network: ${networkName}`);
+  if (!chainFrom || !chainTo) {
+    throw new Error(
+      `Missing chain role configuration in .env:\n` +
+      `  CHAIN_FROM=${chainFrom || '(not set)'}\n` +
+      `  CHAIN_TO=${chainTo || '(not set)'}`
+    );
   }
 
+  // Determine role based on current network
+  let role: 'FROM' | 'TO';
+  if (networkName === chainFrom) {
+    role = 'FROM';
+    console.log(`🔵 SOURCE chain (FROM)\n`);
+  } else if (networkName === chainTo) {
+    role = 'TO';
+    console.log(`🟢 DESTINATION chain (TO)\n`);
+  } else {
+    throw new Error(
+      `Network ${networkName} is not configured as FROM or TO chain.\n` +
+      `  CHAIN_FROM: ${chainFrom}\n` +
+      `  CHAIN_TO: ${chainTo}`
+    );
+  }
+
+  // Get addresses based on role
+  const tokenAddress = process.env[`STABLECOIN_ADDRESS_${role}`] || "";
+  const poolAddress = process.env[`TOKEN_POOL_ADDRESS_${role}`];
+
   if (!tokenAddress) {
-    throw new Error(`STABLECOIN_ADDRESS not found for ${networkName}`);
+    throw new Error(`STABLECOIN_ADDRESS_${role} not found in .env`);
   }
 
   console.log(`📄 Stablecoin Address: ${tokenAddress}`);
@@ -108,7 +132,7 @@ async function main() {
   // Check collateralization status
   console.log(`💰 Collateralization Status:`);
   const totalCollateral = await stablecoin.totalCollateral();
-  const { collateralRatio, isOverCollateralized } = await stablecoin.getCollateralStatus();
+  const { collateralRatio, isOverCollateralized } = await stablecoin.getCollateralizationStatus();
   
   console.log(`  Total Collateral: ${ethers.formatEther(totalCollateral)} ETH`);
   console.log(`  Collateral Ratio: ${collateralRatio}%`);

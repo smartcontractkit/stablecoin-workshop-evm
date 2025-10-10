@@ -10,44 +10,70 @@ dotenv.config();
  * to mint and burn tokens for cross-chain transfers.
  * 
  * Usage:
- *   npx hardhat run scripts/grant-roles.ts --network arbitrumSepolia
- *   npx hardhat run scripts/grant-roles.ts --network avalancheFuji
+ *   npx hardhat run scripts/grant-roles.ts --network sepolia
+ *   npx hardhat run scripts/grant-roles.ts --network baseSepolia
  * 
  * Required Environment Variables:
- *   - STABLECOIN_ADDRESS_ARBITRUM or STABLECOIN_ADDRESS_FUJI
- *   - TOKEN_POOL_ADDRESS_ARBITRUM or TOKEN_POOL_ADDRESS_FUJI
+ *   - CHAIN_FROM: Source chain network name (e.g., "sepolia")
+ *   - CHAIN_TO: Destination chain network name (e.g., "baseSepolia")
+ *   - STABLECOIN_CONTRACT_ADDRESS_FROM: Address on FROM chain
+ *   - STABLECOIN_CONTRACT_ADDRESS_TO: Address on TO chain
+ *   - TOKEN_POOL_ADDRESS_FROM: Pool on FROM chain
+ *   - TOKEN_POOL_ADDRESS_TO: Pool on TO chain
  */
 
 async function main() {
   const [signer] = await ethers.getSigners();
   const network = await ethers.provider.getNetwork();
-  const networkName = network.name === "unknown" ? "arbitrumSepolia" : network.name;
+  const networkName = network.name === "unknown" ? process.env.CHAIN_FROM || "unknown" : network.name;
 
   console.log(`\n========== Grant Roles to TokenPool ==========`);
   console.log(`Network: ${networkName}`);
+  console.log(`Chain ID: ${network.chainId}`);
   console.log(`Signer: ${signer.address}`);
   console.log(`==============================================\n`);
 
-  // Determine which addresses to use based on network
-  let tokenAddress: string;
-  let poolAddress: string;
+  // Get chain role configuration
+  const chainFrom = process.env.CHAIN_FROM;
+  const chainTo = process.env.CHAIN_TO;
 
-  if (networkName.includes("arbitrum") || network.chainId === 421614n) {
-    tokenAddress = process.env.STABLECOIN_ADDRESS_ARBITRUM || process.env.STABLECOIN_ADDRESS || "";
-    poolAddress = process.env.TOKEN_POOL_ADDRESS_ARBITRUM || process.env.TOKEN_POOL_ADDRESS || "";
-  } else if (networkName.includes("fuji") || networkName.includes("avalanche") || network.chainId === 43113n) {
-    tokenAddress = process.env.STABLECOIN_ADDRESS_FUJI || process.env.STABLECOIN_ADDRESS || "";
-    poolAddress = process.env.TOKEN_POOL_ADDRESS_FUJI || process.env.TOKEN_POOL_ADDRESS || "";
-  } else {
-    throw new Error(`Unsupported network: ${networkName} (chainId: ${network.chainId})`);
+  if (!chainFrom || !chainTo) {
+    throw new Error(
+      `Missing chain role configuration in .env:\n` +
+      `  CHAIN_FROM=${chainFrom || '(not set)'}\n` +
+      `  CHAIN_TO=${chainTo || '(not set)'}\n\n` +
+      `Please set CHAIN_FROM and CHAIN_TO to match your network names.`
+    );
   }
 
+  // Determine role based on current network
+  let role: 'FROM' | 'TO';
+  if (networkName === chainFrom) {
+    role = 'FROM';
+    console.log(`🔵 Detected as SOURCE chain (FROM)`);
+  } else if (networkName === chainTo) {
+    role = 'TO';
+    console.log(`🟢 Detected as DESTINATION chain (TO)`);
+  } else {
+    throw new Error(
+      `Network ${networkName} is not configured as FROM or TO chain.\n` +
+      `  CHAIN_FROM: ${chainFrom}\n` +
+      `  CHAIN_TO: ${chainTo}\n` +
+      `  Current network: ${networkName}\n\n` +
+      `Please update your .env file or use the correct --network flag.`
+    );
+  }
+
+  // Get addresses based on role
+  const tokenAddress = process.env[`STABLECOIN_CONTRACT_ADDRESS_${role}`] || "";
+  const poolAddress = process.env[`TOKEN_POOL_ADDRESS_${role}`] || "";
+
   if (!tokenAddress) {
-    throw new Error(`STABLECOIN_ADDRESS not found for ${networkName}. Please set in .env file.`);
+    throw new Error(`STABLECOIN_CONTRACT_ADDRESS_${role} not found in .env file.`);
   }
 
   if (!poolAddress) {
-    throw new Error(`TOKEN_POOL_ADDRESS not found for ${networkName}. Please set in .env file.`);
+    throw new Error(`TOKEN_POOL_ADDRESS_${role} not found in .env file.`);
   }
 
   console.log(`📄 Stablecoin Address: ${tokenAddress}`);
@@ -103,9 +129,10 @@ async function main() {
   if (finalIsMinter && finalIsBurner) {
     console.log(`\n🎉 Success! TokenPool is ready for cross-chain transfers!`);
     console.log(`\n📝 Next steps:`);
-    console.log(`  1. Claim admin role via: cd smart-contract-examples/ccip/cct/hardhat`);
-    console.log(`  2. Link pool: npx hardhat setPool --tokenaddress ${tokenAddress} --pooladdress ${poolAddress} --network ${networkName}`);
-    console.log(`  3. Configure routes: npx hardhat applyChainUpdates ...`);
+    console.log(`  1. Repeat on ${role === 'FROM' ? 'TO' : 'FROM'} chain: npx hardhat run scripts/grant-roles.ts --network ${role === 'FROM' ? chainTo : chainFrom}`);
+    console.log(`  2. Claim admin roles on both chains`);
+    console.log(`  3. Link pools via TokenAdminRegistry`);
+    console.log(`  4. Configure cross-chain routes`);
   } else {
     console.log(`\n⚠️  Warning: Role assignment incomplete. Please check manually.`);
   }

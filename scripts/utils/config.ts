@@ -32,3 +32,49 @@ export function getChainlinkConfig(networkName: string) {
   return config;
 }
 
+/**
+ * Helper to get environment variable with FROM/TO fallback
+ * Tries role-based first (e.g., STABLECOIN_ADDRESS_FROM), then generic (e.g., STABLECOIN_ADDRESS)
+ */
+export function getEnvAddress(
+  baseKey: string,
+  networkName: string
+): string | undefined {
+  const chainFrom = process.env.CHAIN_FROM;
+  const chainTo = process.env.CHAIN_TO;
+
+  // Determine if current network is FROM or TO
+  let role: 'FROM' | 'TO' | null = null;
+  if (chainFrom && networkName === chainFrom) {
+    role = 'FROM';
+  } else if (chainTo && networkName === chainTo) {
+    role = 'TO';
+  }
+
+  // Try role-based first, then generic
+  if (role) {
+    const roleBasedValue = process.env[`${baseKey}_${role}`];
+    if (roleBasedValue) return roleBasedValue;
+  }
+
+  // Fallback to generic
+  return process.env[baseKey];
+}
+
+/**
+ * Helper to suggest environment variable names for output
+ */
+export function suggestEnvVarName(baseKey: string, networkName: string): string {
+  const chainFrom = process.env.CHAIN_FROM;
+  const chainTo = process.env.CHAIN_TO;
+
+  if (chainFrom && networkName === chainFrom) {
+    return `${baseKey}_FROM`;
+  } else if (chainTo && networkName === chainTo) {
+    return `${baseKey}_TO`;
+  }
+
+  // If FROM/TO not configured, suggest generic
+  return baseKey;
+}
+

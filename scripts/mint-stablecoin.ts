@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { getChainlinkConfig } from "./utils/config";
+import { getChainlinkConfig, getEnvAddress, suggestEnvVarName } from "./utils/config";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -7,31 +7,40 @@ dotenv.config();
 async function main() {
   console.log("💰 Minting Oracle-Backed Stablecoins...\n");
 
-  if (!process.env.STABLECOIN_CONTRACT_ADDRESS) {
-    throw new Error("Missing STABLECOIN_CONTRACT_ADDRESS in .env file. Deploy stablecoin first!");
-  }
-
-  if (!process.env.ORACLE_CONTRACT_ADDRESS) {
-    throw new Error("Missing ORACLE_CONTRACT_ADDRESS in .env file");
-  }
-
   const chainConfig = getChainlinkConfig(network.name);
   const [user] = await ethers.getSigners();
 
+  // Read addresses with FROM/TO pattern support
+  const stablecoinAddress = getEnvAddress("STABLECOIN_CONTRACT_ADDRESS", network.name);
+  if (!stablecoinAddress) {
+    const suggestedVar = suggestEnvVarName("STABLECOIN_CONTRACT_ADDRESS", network.name);
+    throw new Error(
+      `Missing stablecoin address. Set ${suggestedVar} in .env file (or generic STABLECOIN_CONTRACT_ADDRESS)`
+    );
+  }
+
+  const oracleAddress = getEnvAddress("ORACLE_CONTRACT_ADDRESS", network.name);
+  if (!oracleAddress) {
+    const suggestedVar = suggestEnvVarName("ORACLE_CONTRACT_ADDRESS", network.name);
+    throw new Error(
+      `Missing oracle address. Set ${suggestedVar} in .env file (or generic ORACLE_CONTRACT_ADDRESS)`
+    );
+  }
+
   console.log(`Network: ${chainConfig.name}`);
-  console.log(`Stablecoin: ${process.env.STABLECOIN_CONTRACT_ADDRESS}`);
-  console.log(`Oracle: ${process.env.ORACLE_CONTRACT_ADDRESS}`);
+  console.log(`Stablecoin: ${stablecoinAddress}`);
+  console.log(`Oracle: ${oracleAddress}`);
   console.log(`User: ${user.address}\n`);
 
   // Connect to contracts
   const stablecoin = await ethers.getContractAt(
     "StablecoinERC20",
-    process.env.STABLECOIN_CONTRACT_ADDRESS
+    stablecoinAddress
   );
 
   const oracle = await ethers.getContractAt(
     "DataStreamsOracle",
-    process.env.ORACLE_CONTRACT_ADDRESS
+    oracleAddress
   );
 
   // Get current oracle price

@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { getChainlinkConfig } from "./utils/config";
+import { getChainlinkConfig, suggestEnvVarName } from "./utils/config";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -12,7 +12,16 @@ async function main() {
 
   console.log(`Network: ${chainConfig.name}`);
   console.log(`Verifier: ${chainConfig.verifier}`);
-  console.log(`Feed ID: ${chainConfig.feedId}\n`);
+  console.log(`Feed ID: ${chainConfig.feedId}`);
+  
+  // Show chain role if configured
+  if (process.env.CHAIN_FROM && network.name === process.env.CHAIN_FROM) {
+    console.log(`Role: 🔵 SOURCE (FROM)\n`);
+  } else if (process.env.CHAIN_TO && network.name === process.env.CHAIN_TO) {
+    console.log(`Role: 🟢 DESTINATION (TO)\n`);
+  } else {
+    console.log();
+  }
 
   // Get signer
   const [deployer] = await ethers.getSigners();
@@ -33,8 +42,16 @@ async function main() {
   console.log(`✅ Oracle deployed: ${oracleAddress}`);
   console.log(`🔍 Explorer: ${chainConfig.explorerUrl}/address/${oracleAddress}\n`);
 
+  // Suggest appropriate env var name
+  const suggestedVarName = suggestEnvVarName("ORACLE_CONTRACT_ADDRESS", network.name);
   console.log("📝 Update your .env file:");
-  console.log(`ORACLE_CONTRACT_ADDRESS=${oracleAddress}\n`);
+  console.log(`${suggestedVarName}=${oracleAddress}`);
+  
+  // Also show generic if using FROM/TO pattern
+  if (suggestedVarName !== "ORACLE_CONTRACT_ADDRESS") {
+    console.log(`# Or use generic: ORACLE_CONTRACT_ADDRESS=${oracleAddress}`);
+  }
+  console.log();
 
   // Verify stored feed ID
   const storedFeedId = await oracle.feedId();
