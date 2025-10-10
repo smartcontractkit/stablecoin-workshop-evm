@@ -87,18 +87,22 @@ vim .env
 
 **📝 Vim Quick Reference:** `i` to edit, `Esc` then `:wq` to save and quit
 
-**🔑 Required Credentials (Fill These Before Starting):**
+**🔑 Required Configuration (Fill These Before Starting):**
 
 ```bash
-# Step 2: Private Key & API Credentials
+# Step 1: Choose Your Chain Pair (REQUIRED - must be set)
+CHAIN_FROM=arbitrum-sepolia
+CHAIN_TO=avalanche-fuji
+
+# Step 2: Private Key & API Credentials (REQUIRED - add your credentials)
 PRIVATE_KEY=your_private_key_without_0x_prefix
 DATASTREAMS_API_KEY=your_chainlink_api_key
 DATASTREAMS_API_SECRET=your_chainlink_api_secret
 ```
 
-**✅ Pre-configured Values (Already Set):**
-- `CHAIN_FROM=arbitrum-sepolia` (source chain)
-- `CHAIN_TO=avalanche-fuji` (destination chain)
+**💡 Important:** Both `CHAIN_FROM`/`CHAIN_TO` AND your credentials must be set for the workshop to work.
+
+**✅ Pre-configured Values (Already Set in .env.example):**
 - `DATASTREAMS_REST_URL` and `DATASTREAMS_WS_URL` (testnet endpoints)
 - Default RPC URLs for both chains
 
@@ -537,12 +541,15 @@ export AVALANCHE_FUJI_RPC_URL="https://avalanche-fuji-c-chain-rpc.publicnode.com
 export PRIVATE_KEY=$(grep "^PRIVATE_KEY=" ../../../../.env | cut -d= -f2)
 export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" ../../../../.env | cut -d= -f2)
 
+# Get your wallet address (or replace with your address manually)
+export YOUR_ADDRESS=$(node -e "console.log(new (require('ethers').Wallet)('$PRIVATE_KEY').address)")
+
 # Transfer tokens (example: 10 OBSC = 10000000000000000000 wei)
 npx hardhat transferTokens \
   --tokenaddress $STABLECOIN_TO \
   --amount 10000000000000000000 \
   --destinationchain arbitrumSepolia \
-  --receiveraddress $(cast wallet address --private-key $PRIVATE_KEY 2>/dev/null || echo "0x[your-address]") \
+  --receiveraddress $YOUR_ADDRESS \
   --fee LINK \
   --network avalancheFuji
 ```
@@ -754,49 +761,3 @@ npm install
 ```
 
 ---
-
-## 📚 Additional Resources
-
-### Chainlink Documentation
-- **Data Streams:** https://docs.chain.link/data-streams
-- **CCIP:** https://docs.chain.link/ccip
-- **Price Feeds:** https://docs.chain.link/data-feeds
-
-### Explorers
-- **CCIP Explorer:** https://ccip.chain.link/
-- **Arbitrum Sepolia:** https://sepolia.arbiscan.io/
-- **Avalanche Fuji:** https://testnet.snowtrace.io/
-
-### Support
-- **Discord:** https://discord.gg/chainlink
-- **Stack Overflow:** Tag your question with `chainlink`
-- **GitHub Issues:** https://github.com/smartcontractkit/chainlink
-
----
-
-## 🎉 Congratulations!
-
-You've successfully built and deployed a production-ready oracle-backed stablecoin with cross-chain CCIP integration!
-
-**What You've Learned:**
-- ✅ Integrating Chainlink Data Streams for real-time price feeds
-- ✅ Building collateral-backed stablecoins with oracle integration
-- ✅ Deploying CCIP TokenPools for cross-chain transfers
-- ✅ Configuring TokenAdminRegistry and cross-chain routes
-- ✅ Executing Burn & Mint cross-chain token transfers
-- ✅ Building chain-agnostic smart contract systems
-
-**Next Steps:**
-- Adapt this to other EVM chain pairs
-- Add rate limiting for security
-- Implement emergency pause functionality
-- Add liquidation mechanisms for under-collateralization
-- Build a frontend interface for your stablecoin
-
-**Share Your Success:**
-- Tweet about your workshop completion with #Chainlink
-- Share your deployment addresses and explorer links
-- Help others in the community who are learning
-
----
-
