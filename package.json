@@ -25,7 +25,7 @@
     "@chainlink/contracts": "^1.2.0",
     "@chainlink/contracts-ccip": "^1.5.0",
     "@chainlink/data-streams-sdk": "*",
-    "@openzeppelin/contracts": "^5.0.0",
+    "@openzeppelin/contracts": "4.8.3",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.0"
   },
@@ -39,4 +39,3 @@
     "typescript": "^5.3.3"
   }
 }
-
