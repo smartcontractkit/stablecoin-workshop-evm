@@ -515,30 +515,32 @@ npx hardhat applyChainUpdates \
 
 ## 🚀 Phase 5: Execute Cross-Chain Transfer
 
-### Step 5.1: Check Your Balance
+### Step 5.1: Check Your Balance on TO Chain (Avalanche Fuji)
 ```bash
 # Return to project root
 cd ../../../../
 
-# Load stablecoin address
+# Load stablecoin address from TO chain
 export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" .env | cut -d= -f2)
 
-# Check your balance on TO chain
+# Check your balance on TO chain (Avalanche Fuji)
 npx hardhat console --network avalanche-fuji << EOF
 const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_TO");
 const [signer] = await ethers.getSigners();
 const balance = await stablecoin.balanceOf(signer.address);
-console.log("Balance:", ethers.formatEther(balance), "OBSC");
+console.log("Balance on Avalanche Fuji:", ethers.formatEther(balance), "OBSC");
 process.exit(0);
 EOF
 ```
 
 **Expected Output:**
 ```
-Balance: 385.91 OBSC
+Balance on Avalanche Fuji: 385.91 OBSC
 ```
 
-### Step 5.2: Execute Cross-Chain Transfer
+**💡 Note:** We're checking the TO chain (destination) balance here because in this workshop example, we minted tokens on BOTH chains during Phase 1 and 2. For a real-world scenario where tokens only exist on FROM chain initially, this balance would be 0.
+
+### Step 5.2: Execute Cross-Chain Transfer (TO Chain → FROM Chain)
 ```bash
 # Navigate to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
@@ -546,12 +548,13 @@ cd smart-contract-examples/ccip/cct/hardhat
 # Reload environment
 export AVALANCHE_FUJI_RPC_URL="https://avalanche-fuji-c-chain-rpc.publicnode.com"
 export PRIVATE_KEY=$(grep "^PRIVATE_KEY=" ../../../../.env | cut -d= -f2)
-export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" ../../../../.env | cut -d= -f2)
+export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" .env | cut -d= -f2)
 
-# Get your wallet address (or replace with your address manually)
+# Get your wallet address
 export YOUR_ADDRESS=$(node -e "console.log(new (require('ethers').Wallet)('$PRIVATE_KEY').address)")
 
-# Transfer tokens (example: 10 OBSC = 10000000000000000000 wei)
+# Transfer tokens FROM Avalanche Fuji (TO chain) TO Arbitrum Sepolia (FROM chain)
+# Amount is in wei: 10 OBSC = 10000000000000000000 wei (18 decimals)
 npx hardhat transferTokens \
   --tokenaddress $STABLECOIN_TO \
   --amount 10000000000000000000 \
