@@ -19,6 +19,20 @@ This workshop guides you through building a production-ready oracle-backed stabl
 
 ---
 
+## 📌 About This Workshop
+
+This workshop uses **Arbitrum Sepolia → Avalanche Fuji** as a working example, but the architecture is **fully chain-agnostic**. 
+
+**You can deploy to any EVM chain pair** that supports:
+- ✅ Chainlink CCIP
+- ✅ Chainlink Data Streams
+
+**All commands in this guide use Arbitrum Sepolia and Avalanche Fuji as examples.** Simply replace these network names with your chosen chains throughout the workshop.
+
+**Using different chains?** See [Adapting to Other Chain Pairs](#-adapting-to-other-chain-pairs) at the end for configuration details.
+
+---
+
 ## 📋 Prerequisites
 
 ### Required Tools
@@ -33,13 +47,15 @@ This workshop guides you through building a production-ready oracle-backed stabl
 ### Required Accounts & Access
 
 **Testnet Funds:**
-- **Wallet with testnet ETH** on both chains
-  - Arbitrum Sepolia: https://faucets.chain.link/arbitrum-sepolia
-  - Avalanche Fuji: https://core.app/tools/testnet-faucet/
-  - **Ask instructor for testnet funds** (recommended - faster)
-- **LINK tokens** for CCIP fees
-  - Arbitrum Sepolia LINK: https://faucets.chain.link/arbitrum-sepolia
-  - Avalanche Fuji LINK: https://faucets.chain.link/avalanche-fuji
+- **Wallet with testnet ETH** on both your chosen chains
+- **LINK tokens** for CCIP fees on both chains
+- **Ask instructor for testnet funds** (recommended - fastest)
+
+**Example Faucets (for Arbitrum Sepolia & Avalanche Fuji):**
+- Arbitrum Sepolia: https://faucets.chain.link/arbitrum-sepolia
+- Avalanche Fuji: https://core.app/tools/testnet-faucet/
+
+**For other chains:** Visit https://faucets.chain.link/ and select your networks
 
 **Chainlink Data Streams Access:**
 - API Key and Secret (provided in workshop)
@@ -91,6 +107,8 @@ vim .env
 
 ```bash
 # Step 1: Choose Your Chain Pair (REQUIRED - must be set)
+# Example below uses Arbitrum Sepolia → Avalanche Fuji
+# Replace with any supported EVM chain pair (see .env.example for pre-configured options)
 CHAIN_FROM=arbitrum-sepolia
 CHAIN_TO=avalanche-fuji
 
@@ -138,7 +156,9 @@ Compiled 15 Solidity files successfully
 
 ---
 
-## 🏗️ Phase 1: Oracle & Stablecoin on FROM Chain (Arbitrum Sepolia)
+## 🏗️ Phase 1: Oracle & Stablecoin on FROM Chain
+
+**💡 Example Chain:** Commands in this phase use `arbitrum-sepolia`. Replace with your FROM chain.
 
 ### Step 1.1: Deploy Oracle
 ```bash
@@ -230,11 +250,13 @@ Expected mint: ~401.388 OBSC
 🎉 Minting complete!
 ```
 
-**✅ Checkpoint:** You now have a working oracle-backed stablecoin on Arbitrum Sepolia with real Chainlink Data Streams price feeds!
+**✅ Checkpoint:** You now have a working oracle-backed stablecoin on your FROM chain with real Chainlink Data Streams price feeds!
 
 ---
 
-## 🏗️ Phase 2: Oracle & Stablecoin on TO Chain (Avalanche Fuji)
+## 🏗️ Phase 2: Oracle & Stablecoin on TO Chain
+
+**💡 Example Chain:** Commands in this phase use `avalanche-fuji`. Replace with your TO chain.
 
 **💡 Note:** While the TO chain (destination) also gets an oracle in this workshop for consistency, in production scenarios, a destination-only chain doesn't strictly require oracle integration since it only receives tokens via CCIP, not collateral-based minting. However, deploying it allows testing minting on both chains.
 
@@ -295,6 +317,8 @@ npx hardhat run scripts/mint-stablecoin.ts --network avalanche-fuji
 
 ## 🌉 Phase 3: CCIP TokenPool Deployment
 
+**💡 Network Names:** CCIP submodule uses camelCase (e.g., `arbitrumSepolia`, `avalancheFuji`). Our custom scripts use kebab-case (e.g., `arbitrum-sepolia`). Both refer to the same networks.
+
 ### Step 3.1: Navigate to CCIP Submodule
 ```bash
 cd smart-contract-examples/ccip/cct/hardhat
@@ -322,8 +346,14 @@ npx hardhat deployTokenPool \
 **Expected Output:**
 ```
 Token pool deployed to: 0x[your-pool-address]
-(Ignore the error about granting roles - we'll handle that separately)
+Granting mint and burn roles to 0x[your-pool-address]...
+Token pool contract deployed successfully
 ```
+
+**✨ What Happened:**
+- TokenPool was deployed successfully
+- The deployment script automatically granted mint and burn roles to the pool
+- Our `StablecoinERC20` contract has a `grantMintAndBurnRoles()` wrapper that enables this seamless integration
 
 **Key Address to Save:**
 - **TokenPool Address (FROM):** Copy the pool address from output
@@ -335,26 +365,7 @@ vim ../../../../.env
 # Add your pool address from Step 3.3
 ```
 
-### Step 3.5: Grant Mint/Burn Roles on FROM Chain
-```bash
-# Return to project root
-cd ../../../../
-
-# Grant roles using our custom script
-npx hardhat run scripts/grant-roles.ts --network arbitrum-sepolia
-```
-
-**Expected Output:**
-```
-🔵 Detected as SOURCE chain (FROM)
-✅ Granting minter role to pool...
-✅ Granting burner role to pool...
-📋 Final role verification:
-  Pool is Minter: ✅
-  Pool is Burner: ✅
-```
-
-### Step 3.6: Deploy TokenPool on TO Chain
+### Step 3.5: Deploy TokenPool on TO Chain
 ```bash
 # Navigate back to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
@@ -369,27 +380,18 @@ npx hardhat deployTokenPool \
   --pooltype burnMint
 ```
 
-### Step 3.7: Update Environment with TO Chain Pool
+**Expected Output:**
+```
+Token pool deployed to: 0x[your-pool-address]
+Granting mint and burn roles to 0x[your-pool-address]...
+Token pool contract deployed successfully
+```
+
+### Step 3.6: Update Environment with TO Chain Pool
 ```bash
 vim ../../../../.env
 # Find: TOKEN_POOL_ADDRESS_TO=
-# Add your pool address from Step 3.6
-```
-
-### Step 3.8: Grant Mint/Burn Roles on TO Chain
-```bash
-# Return to project root
-cd ../../../../
-
-# Grant roles
-npx hardhat run scripts/grant-roles.ts --network avalanche-fuji
-```
-
-**Expected Output:**
-```
-🟢 Detected as DESTINATION chain (TO)
-✅ Pool is Minter: ✅
-✅ Pool is Burner: ✅
+# Add your pool address from Step 3.5
 ```
 
 **✅ Checkpoint:** Both TokenPools are deployed with proper mint/burn permissions!
@@ -426,7 +428,7 @@ npx hardhat claimAdmin \
 ✅ Successfully claimed admin using owner mode
 ```
 
-### Step 4.4: Claim Admin on TO Chain
+### Step 4.3: Claim Admin on TO Chain
 ```bash
 npx hardhat claimAdmin \
   --network avalancheFuji \
@@ -434,7 +436,7 @@ npx hardhat claimAdmin \
   --mode owner
 ```
 
-### Step 4.5: Accept Admin Role on FROM Chain
+### Step 4.4: Accept Admin Role on FROM Chain
 ```bash
 npx hardhat acceptAdminRole \
   --network arbitrumSepolia \
@@ -446,14 +448,14 @@ npx hardhat acceptAdminRole \
 Accepted admin role for token [...] tx: 0x[...]
 ```
 
-### Step 4.6: Accept Admin Role on TO Chain
+### Step 4.5: Accept Admin Role on TO Chain
 ```bash
 npx hardhat acceptAdminRole \
   --network avalancheFuji \
   --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO
 ```
 
-### Step 4.7: Set Pool on FROM Chain
+### Step 4.6: Set Pool on FROM Chain
 ```bash
 npx hardhat setPool \
   --network arbitrumSepolia \
@@ -466,7 +468,7 @@ npx hardhat setPool \
 Pool set for token [...] to [...]
 ```
 
-### Step 4.8: Set Pool on TO Chain
+### Step 4.7: Set Pool on TO Chain
 ```bash
 npx hardhat setPool \
   --network avalancheFuji \
@@ -474,7 +476,7 @@ npx hardhat setPool \
   --pooladdress $TOKEN_POOL_ADDRESS_TO
 ```
 
-### Step 4.9: Configure FROM → TO Route
+### Step 4.8: Configure FROM → TO Route
 ```bash
 npx hardhat applyChainUpdates \
   --network arbitrumSepolia \
@@ -489,7 +491,7 @@ npx hardhat applyChainUpdates \
 ✅ Chain update applied successfully!
 ```
 
-### Step 4.10: Configure TO → FROM Route
+### Step 4.9: Configure TO → FROM Route
 ```bash
 npx hardhat applyChainUpdates \
   --network avalancheFuji \
@@ -510,7 +512,9 @@ npx hardhat applyChainUpdates \
 
 ## 🚀 Phase 5: Execute Cross-Chain Transfer
 
-### Step 5.1: Check Your Balance on TO Chain (Avalanche Fuji)
+**💡 Transfer Direction:** This phase demonstrates TO → FROM transfer (reverse direction) to showcase bidirectional capability.
+
+### Step 5.1: Check Your Balance on TO Chain
 ```bash
 # Return to project root
 cd ../../../../
@@ -518,24 +522,24 @@ cd ../../../../
 # Load environment variables
 source .env
 
-# Check your balance on TO chain (Avalanche Fuji)
+# Check your balance on TO chain
 npx hardhat console --network avalanche-fuji << EOF
 const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_TO");
 const [signer] = await ethers.getSigners();
 const balance = await stablecoin.balanceOf(signer.address);
-console.log("Balance on Avalanche Fuji:", ethers.formatEther(balance), "OBSC");
+console.log("Balance on TO chain:", ethers.formatEther(balance), "OBSC");
 process.exit(0);
 EOF
 ```
 
 **Expected Output:**
 ```
-Balance on Avalanche Fuji: 385.91 OBSC
+Balance on TO chain: 385.91 OBSC
 ```
 
 **💡 Note:** We're checking the TO chain (destination) balance here because in this workshop example, we minted tokens on BOTH chains during Phase 1 and 2. For a real-world scenario where tokens only exist on FROM chain initially, this balance would be 0.
 
-### Step 5.2: Execute Cross-Chain Transfer (TO Chain → FROM Chain)
+### Step 5.2: Execute Cross-Chain Transfer
 ```bash
 # Navigate to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
@@ -546,7 +550,7 @@ source ../../../../.env
 # Get your wallet address
 export YOUR_ADDRESS=$(node -e "console.log(new (require('ethers').Wallet)('$PRIVATE_KEY').address)")
 
-# Transfer tokens FROM Avalanche Fuji (TO chain) TO Arbitrum Sepolia (FROM chain)
+# Transfer tokens from TO chain to FROM chain
 # Amount is in wei: 10 OBSC = 10000000000000000000 wei (18 decimals)
 npx hardhat transferTokens \
   --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
@@ -558,6 +562,8 @@ npx hardhat transferTokens \
 ```
 
 **💡 Amount Format:** The amount is in wei (18 decimals). To transfer 10 tokens, use `10000000000000000000`.
+
+**💡 Network Names:** Replace `avalancheFuji` with your TO chain (camelCase) and `arbitrumSepolia` with your FROM chain.
 
 **Expected Output:**
 ```
@@ -571,7 +577,7 @@ Check status: https://ccip.chain.link/tx/0x[transaction-hash]
 ### Step 5.3: Monitor Transfer
 - **CCIP Explorer:** Copy the URL from the output to track your transfer
 - **Expected Time:** 10-20 minutes for cross-chain confirmation
-- **On Success:** Tokens will be burned on Avalanche Fuji and minted on Arbitrum Sepolia
+- **On Success:** Tokens will be burned on TO chain and minted on FROM chain
 
 ### Step 5.4: Verify Receipt (After 10-20 minutes)
 ```bash
@@ -581,13 +587,13 @@ cd ../../../../
 # Load environment variables
 source .env
 
-# Check balance on destination chain (Arbitrum Sepolia)
+# Check balance on destination chain (FROM chain)
 npx hardhat console --network arbitrum-sepolia << EOF
 const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_FROM");
 const [signer] = await ethers.getSigners();
 const balance = await stablecoin.balanceOf(signer.address);
 console.log("Balance:", ethers.formatEther(balance), "OBSC");
-console.log("✅ Tokens successfully received from Avalanche Fuji!");
+console.log("✅ Tokens successfully received from TO chain!");
 process.exit(0);
 EOF
 ```
@@ -595,7 +601,7 @@ EOF
 **Expected Output:**
 ```
 Balance: 10.0 OBSC
-✅ Tokens successfully received from Avalanche Fuji!
+✅ Tokens successfully received from TO chain!
 ```
 
 **✅ Success!** You've completed a cross-chain transfer of oracle-backed stablecoins!
@@ -725,9 +731,21 @@ npx hardhat run scripts/fund-oracle.ts --network [your-network]
 ```
 
 #### 4. Pool Doesn't Have Mint/Burn Roles
-**Solution:** Run grant-roles script
+**Problem:** This should not happen if TokenPool was deployed successfully
+**Check:** Verify roles were granted during deployment
 ```bash
-npx hardhat run scripts/grant-roles.ts --network [your-network]
+npx hardhat console --network [your-network]
+# In console:
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "[stablecoin-address]");
+console.log("Is Minter:", await stablecoin.isMinter("[pool-address]"));
+console.log("Is Burner:", await stablecoin.isBurner("[pool-address]"));
+```
+**Solution:** If roles are missing, manually grant them
+```bash
+npx hardhat console --network [your-network]
+# In console:
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "[stablecoin-address]");
+await stablecoin.grantMintAndBurnRoles("[pool-address]");
 ```
 
 #### 5. "Blockhash not found" or RPC Errors
@@ -750,10 +768,10 @@ Actual price: $4,013.88
 ```
 
 #### 8. Transaction Fails with "insufficient funds"
-**Solution:** Get more testnet ETH
+**Solution:** Get more testnet ETH from faucet for your chain
 ```bash
-# Arbitrum Sepolia: https://faucets.chain.link/arbitrum-sepolia
-# Avalanche Fuji: https://core.app/tools/testnet-faucet/
+# Visit: https://faucets.chain.link/
+# Select your chain and request testnet ETH
 ```
 
 #### 9. Environment Variables Not Loading
@@ -787,8 +805,13 @@ npm install
 
 ### Explorers
 - **CCIP Explorer:** https://ccip.chain.link/
-- **Arbitrum Sepolia:** https://sepolia.arbiscan.io/
-- **Avalanche Fuji:** https://testnet.snowtrace.io/
+- **Find your chain's explorer:** Check your chain's documentation or https://chainlist.org/
+
+**Example Chain Explorers:**
+- Arbitrum Sepolia: https://sepolia.arbiscan.io/
+- Avalanche Fuji: https://testnet.snowtrace.io/
+- Ethereum Sepolia: https://sepolia.etherscan.io/
+- Base Sepolia: https://sepolia.basescan.org/
 
 ### Support
 - **Discord:** https://discord.gg/chainlink

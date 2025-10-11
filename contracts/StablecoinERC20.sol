@@ -117,6 +117,18 @@ contract StablecoinERC20 is ERC20, ERC20Burnable, Ownable {
         emit BurnerRemoved(burner);
     }
     
+    /**
+     * @notice Convenience function to grant both mint and burn roles in one call
+     * @dev Used by CCIP TokenPool deployment script
+     * @param burnAndMinter The address to grant both roles to (typically a TokenPool)
+     */
+    function grantMintAndBurnRoles(address burnAndMinter) external onlyOwner {
+        s_minters[burnAndMinter] = true;
+        emit MinterAdded(burnAndMinter);
+        s_burners[burnAndMinter] = true;
+        emit BurnerAdded(burnAndMinter);
+    }
+    
     function isMinter(address account) external view returns (bool) {
         return s_minters[account];
     }
