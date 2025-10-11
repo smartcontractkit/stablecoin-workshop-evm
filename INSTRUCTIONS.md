@@ -44,6 +44,49 @@ This workshop uses **Arbitrum Sepolia → Avalanche Fuji** as a working example,
 **Git**
 - Install via your system package manager or https://git-scm.com/downloads
 
+### Operating System Compatibility
+
+**✅ macOS / Linux**
+- Full support out of the box
+- All commands work as documented
+
+**✅ Windows**
+- Supported with Git symlink configuration
+- **Important:** This workshop uses Git symlinks for `.env` file sharing between root and submodule directories
+
+**Windows Setup (Required):**
+
+This workshop relies on a symlink from `smart-contract-examples/ccip/cct/hardhat/.env` → `../../../../.env`. To enable symlinks on Windows:
+
+**Option 1: Enable Developer Mode (Recommended)**
+1. Open Settings → Update & Security → For developers
+2. Enable "Developer Mode"
+3. Configure Git: `git config --global core.symlinks true`
+4. Clone the repository (symlinks will work automatically)
+
+**Option 2: Run Git as Administrator**
+1. Configure Git: `git config --global core.symlinks true`
+2. Clone the repository using Git Bash **run as Administrator**
+
+**Option 3: Manual Workaround (If symlinks don't work)**
+If symlinks fail to work, manually copy `.env` after each update:
+```bash
+# After updating root .env, copy to submodule:
+cp .env smart-contract-examples/ccip/cct/hardhat/.env
+```
+
+**Verify Symlink:**
+After cloning, check if the symlink works:
+```bash
+# On Windows (PowerShell):
+Get-Item smart-contract-examples/ccip/cct/hardhat/.env | Select-Object LinkType, Target
+
+# On Windows (Git Bash) or macOS/Linux:
+ls -la smart-contract-examples/ccip/cct/hardhat/.env
+```
+
+You should see a symlink pointing to `../../../../.env`.
+
 ### Required Accounts & Access
 
 **Testnet Funds:**
@@ -66,7 +109,10 @@ This workshop uses **Arbitrum Sepolia → Avalanche Fuji** as a working example,
 
 ### Step 0.1: Clone the Workshop Repository
 ```bash
+# Clone the repository
 git clone https://github.com/smartcontractkit/stablecoin-workshop-evm
+
+# Navigate into the project directory
 cd stablecoin-workshop-evm
 ```
 
@@ -283,9 +329,24 @@ vim .env
 npx hardhat run scripts/fund-oracle.ts --network avalanche-fuji
 ```
 
+**Expected Output:**
+```
+💰 Funding Oracle with LINK tokens...
+✅ Oracle LINK balance: 10.0 LINK
+🎉 Funding complete!
+```
+
 ### Step 2.4: Update TO Chain Oracle
 ```bash
 npx hardhat run scripts/update-oracle.ts --network avalanche-fuji
+```
+
+**Expected Output:**
+```
+✅ Transaction confirmed
+📊 Querying latest price...
+Price: $3750.17 (18 decimals)
+Timestamp: 2025-10-11T20:08:04.000Z
 ```
 
 ### Step 2.5: Deploy TO Chain Stablecoin
@@ -402,13 +463,13 @@ vim ../../../../.env
 
 ### Step 4.1: Setup Environment Variables
 ```bash
-# Navigate to CCIP submodule
+# Navigate to CCIP submodule directory
 cd smart-contract-examples/ccip/cct/hardhat
 
-# Load all environment variables from .env
+# Load all environment variables from root .env file
 source ../../../../.env
 
-# Verify all addresses are loaded
+# Verify all contract addresses are loaded correctly
 echo "FROM Stablecoin: $STABLECOIN_CONTRACT_ADDRESS_FROM"
 echo "FROM Pool: $TOKEN_POOL_ADDRESS_FROM"
 echo "TO Stablecoin: $STABLECOIN_CONTRACT_ADDRESS_TO"
@@ -436,6 +497,11 @@ npx hardhat claimAdmin \
   --mode owner
 ```
 
+**Expected Output:**
+```
+✅ Successfully claimed admin using owner mode
+```
+
 ### Step 4.4: Accept Admin Role on FROM Chain
 ```bash
 npx hardhat acceptAdminRole \
@@ -453,6 +519,11 @@ Accepted admin role for token [...] tx: 0x[...]
 npx hardhat acceptAdminRole \
   --network avalancheFuji \
   --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO
+```
+
+**Expected Output:**
+```
+Accepted admin role for token [...] tx: 0x[...]
 ```
 
 ### Step 4.6: Set Pool on FROM Chain
@@ -474,6 +545,11 @@ npx hardhat setPool \
   --network avalancheFuji \
   --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
   --pooladdress $TOKEN_POOL_ADDRESS_TO
+```
+
+**Expected Output:**
+```
+Pool set for token [...] to [...]
 ```
 
 ### Step 4.8: Configure FROM → TO Route
