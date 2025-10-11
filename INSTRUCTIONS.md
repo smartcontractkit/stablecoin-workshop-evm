@@ -813,11 +813,6 @@ npm install
 - Ethereum Sepolia: https://sepolia.etherscan.io/
 - Base Sepolia: https://sepolia.basescan.org/
 
-### Support
-- **Discord:** https://discord.gg/chainlink
-- **Stack Overflow:** Tag your question with `chainlink`
-- **GitHub Issues:** https://github.com/smartcontractkit/chainlink
-
 ---
 
 ## 🎉 Congratulations!
@@ -834,14 +829,8 @@ You've successfully built and deployed a production-ready oracle-backed stableco
 
 **Next Steps:**
 - Adapt this to other EVM chain pairs
-- Add rate limiting for security
-- Implement emergency pause functionality
+- Add rebalancing mechanisms for scalability and sustainability
 - Add liquidation mechanisms for under-collateralization
 - Build a frontend interface for your stablecoin
-
-**Share Your Success:**
-- Tweet about your workshop completion with #Chainlink
-- Share your deployment addresses and explorer links
-- Help others in the community who are learning
-
+- Implement emergency pause functionality
 ---
