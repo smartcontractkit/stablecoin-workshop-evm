@@ -102,6 +102,20 @@ DATASTREAMS_API_SECRET=your_chainlink_api_secret
 
 **💡 Important:** Both `CHAIN_FROM`/`CHAIN_TO` AND your credentials must be set for the workshop to work.
 
+**⚠️ Special Characters in API Secrets:**
+
+If your `DATASTREAMS_API_SECRET` contains special characters (like `&`, `<`, `>`, `*`, etc.), make sure it's properly quoted:
+
+```bash
+# ✅ Correct - quoted secret
+DATASTREAMS_API_SECRET="your-secret-with-special&characters<here>"
+
+# ❌ Wrong - unquoted secret (will cause parsing errors with source .env)
+DATASTREAMS_API_SECRET=your-secret-with-special&characters<here>
+```
+
+**📝 Note:** After editing `.env`, simply run `source .env` to reload all variables. The shell and Node.js automatically strip quotes when loading variables, so both our scripts (`dotenv`) and the CCIP submodule will receive clean values.
+
 **✅ Pre-configured Values (Already Set in .env.example):**
 - `DATASTREAMS_REST_URL` and `DATASTREAMS_WS_URL` (testnet endpoints)
 - Default RPC URLs for both chains
@@ -288,26 +302,20 @@ cd smart-contract-examples/ccip/cct/hardhat
 
 ### Step 3.2: Setup Environment for CCIP Scripts
 ```bash
-# Export environment variables for Hardhat
-export ARBITRUM_SEPOLIA_RPC_URL="https://sepolia-rollup.arbitrum.io/rpc"
-export AVALANCHE_FUJI_RPC_URL="https://avalanche-fuji-c-chain-rpc.publicnode.com"
-export PRIVATE_KEY=$(grep "^PRIVATE_KEY=" ../../../../.env | cut -d= -f2)
+# Load environment variables from .env
+source ../../../../.env
 ```
 
 **💡 What This Does:**
-- Exports RPC URLs so the CCIP submodule can connect to both chains
-- Reads your private key from the root `.env` file
-- Required because the submodule uses `@chainlink/env-enc` which needs explicit exports
+- Loads all required environment variables from your `.env` file
+- The CCIP submodule Hardhat tasks can now access `$PRIVATE_KEY`, RPC URLs, and all deployed contract addresses
 
 ### Step 3.3: Deploy TokenPool on FROM Chain
 ```bash
-# Load stablecoin address from .env
-export STABLECOIN_FROM=$(grep "^STABLECOIN_CONTRACT_ADDRESS_FROM=" ../../../../.env | cut -d= -f2)
-
-# Deploy TokenPool
+# Deploy TokenPool (using $STABLECOIN_CONTRACT_ADDRESS_FROM from sourced .env)
 npx hardhat deployTokenPool \
   --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_FROM \
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM \
   --pooltype burnMint
 ```
 
@@ -351,15 +359,13 @@ npx hardhat run scripts/grant-roles.ts --network arbitrum-sepolia
 # Navigate back to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
 
-# Reload environment
-export AVALANCHE_FUJI_RPC_URL="https://avalanche-fuji-c-chain-rpc.publicnode.com"
-export PRIVATE_KEY=$(grep "^PRIVATE_KEY=" ../../../../.env | cut -d= -f2)
-export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" ../../../../.env | cut -d= -f2)
+# Reload environment variables
+source ../../../../.env
 
 # Deploy TokenPool on TO chain
 npx hardhat deployTokenPool \
   --network avalancheFuji \
-  --tokenaddress $STABLECOIN_TO \
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
   --pooltype burnMint
 ```
 
@@ -397,32 +403,21 @@ npx hardhat run scripts/grant-roles.ts --network avalanche-fuji
 # Navigate to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
 
-# Export all required variables
-export ARBITRUM_SEPOLIA_RPC_URL="https://sepolia-rollup.arbitrum.io/rpc"
-export AVALANCHE_FUJI_RPC_URL="https://avalanche-fuji-c-chain-rpc.publicnode.com"
-export PRIVATE_KEY=$(grep "^PRIVATE_KEY=" ../../../../.env | cut -d= -f2)
-```
-
-### Step 4.2: Load Deployment Addresses
-```bash
-# Load stablecoin and pool addresses from .env
-export STABLECOIN_FROM=$(grep "^STABLECOIN_CONTRACT_ADDRESS_FROM=" ../../../../.env | cut -d= -f2)
-export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" ../../../../.env | cut -d= -f2)
-export POOL_FROM=$(grep "^TOKEN_POOL_ADDRESS_FROM=" ../../../../.env | cut -d= -f2)
-export POOL_TO=$(grep "^TOKEN_POOL_ADDRESS_TO=" ../../../../.env | cut -d= -f2)
+# Load all environment variables from .env
+source ../../../../.env
 
 # Verify all addresses are loaded
-echo "FROM Stablecoin: $STABLECOIN_FROM"
-echo "FROM Pool: $POOL_FROM"
-echo "TO Stablecoin: $STABLECOIN_TO"
-echo "TO Pool: $POOL_TO"
+echo "FROM Stablecoin: $STABLECOIN_CONTRACT_ADDRESS_FROM"
+echo "FROM Pool: $TOKEN_POOL_ADDRESS_FROM"
+echo "TO Stablecoin: $STABLECOIN_CONTRACT_ADDRESS_TO"
+echo "TO Pool: $TOKEN_POOL_ADDRESS_TO"
 ```
 
-### Step 4.3: Claim Admin on FROM Chain
+### Step 4.2: Claim Admin on FROM Chain
 ```bash
 npx hardhat claimAdmin \
   --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_FROM \
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM \
   --mode owner
 ```
 
@@ -435,7 +430,7 @@ npx hardhat claimAdmin \
 ```bash
 npx hardhat claimAdmin \
   --network avalancheFuji \
-  --tokenaddress $STABLECOIN_TO \
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
   --mode owner
 ```
 
@@ -443,7 +438,7 @@ npx hardhat claimAdmin \
 ```bash
 npx hardhat acceptAdminRole \
   --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_FROM
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM
 ```
 
 **Expected Output:**
@@ -455,15 +450,15 @@ Accepted admin role for token [...] tx: 0x[...]
 ```bash
 npx hardhat acceptAdminRole \
   --network avalancheFuji \
-  --tokenaddress $STABLECOIN_TO
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO
 ```
 
 ### Step 4.7: Set Pool on FROM Chain
 ```bash
 npx hardhat setPool \
   --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_FROM \
-  --pooladdress $POOL_FROM
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM \
+  --pooladdress $TOKEN_POOL_ADDRESS_FROM
 ```
 
 **Expected Output:**
@@ -475,18 +470,18 @@ Pool set for token [...] to [...]
 ```bash
 npx hardhat setPool \
   --network avalancheFuji \
-  --tokenaddress $STABLECOIN_TO \
-  --pooladdress $POOL_TO
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
+  --pooladdress $TOKEN_POOL_ADDRESS_TO
 ```
 
 ### Step 4.9: Configure FROM → TO Route
 ```bash
 npx hardhat applyChainUpdates \
   --network arbitrumSepolia \
-  --pooladdress $POOL_FROM \
+  --pooladdress $TOKEN_POOL_ADDRESS_FROM \
   --remotechain avalancheFuji \
-  --remotepooladdresses $POOL_TO \
-  --remotetokenaddress $STABLECOIN_TO
+  --remotepooladdresses $TOKEN_POOL_ADDRESS_TO \
+  --remotetokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO
 ```
 
 **Expected Output:**
@@ -498,10 +493,10 @@ npx hardhat applyChainUpdates \
 ```bash
 npx hardhat applyChainUpdates \
   --network avalancheFuji \
-  --pooladdress $POOL_TO \
+  --pooladdress $TOKEN_POOL_ADDRESS_TO \
   --remotechain arbitrumSepolia \
-  --remotepooladdresses $POOL_FROM \
-  --remotetokenaddress $STABLECOIN_FROM
+  --remotepooladdresses $TOKEN_POOL_ADDRESS_FROM \
+  --remotetokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM
 ```
 
 **Expected Output:**
@@ -520,12 +515,12 @@ npx hardhat applyChainUpdates \
 # Return to project root
 cd ../../../../
 
-# Load stablecoin address from TO chain
-export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" .env | cut -d= -f2)
+# Load environment variables
+source .env
 
 # Check your balance on TO chain (Avalanche Fuji)
 npx hardhat console --network avalanche-fuji << EOF
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_TO");
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_TO");
 const [signer] = await ethers.getSigners();
 const balance = await stablecoin.balanceOf(signer.address);
 console.log("Balance on Avalanche Fuji:", ethers.formatEther(balance), "OBSC");
@@ -545,10 +540,8 @@ Balance on Avalanche Fuji: 385.91 OBSC
 # Navigate to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
 
-# Reload environment
-export AVALANCHE_FUJI_RPC_URL="https://avalanche-fuji-c-chain-rpc.publicnode.com"
-export PRIVATE_KEY=$(grep "^PRIVATE_KEY=" ../../../../.env | cut -d= -f2)
-export STABLECOIN_TO=$(grep "^STABLECOIN_CONTRACT_ADDRESS_TO=" .env | cut -d= -f2)
+# Load environment variables
+source ../../../../.env
 
 # Get your wallet address
 export YOUR_ADDRESS=$(node -e "console.log(new (require('ethers').Wallet)('$PRIVATE_KEY').address)")
@@ -556,7 +549,7 @@ export YOUR_ADDRESS=$(node -e "console.log(new (require('ethers').Wallet)('$PRIV
 # Transfer tokens FROM Avalanche Fuji (TO chain) TO Arbitrum Sepolia (FROM chain)
 # Amount is in wei: 10 OBSC = 10000000000000000000 wei (18 decimals)
 npx hardhat transferTokens \
-  --tokenaddress $STABLECOIN_TO \
+  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
   --amount 10000000000000000000 \
   --destinationchain arbitrumSepolia \
   --receiveraddress $YOUR_ADDRESS \
@@ -585,12 +578,12 @@ Check status: https://ccip.chain.link/tx/0x[transaction-hash]
 # Return to project root
 cd ../../../../
 
-# Load stablecoin address
-export STABLECOIN_FROM=$(grep "^STABLECOIN_CONTRACT_ADDRESS_FROM=" .env | cut -d= -f2)
+# Load environment variables
+source .env
 
 # Check balance on destination chain (Arbitrum Sepolia)
 npx hardhat console --network arbitrum-sepolia << EOF
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_FROM");
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_FROM");
 const [signer] = await ethers.getSigners();
 const balance = await stablecoin.balanceOf(signer.address);
 console.log("Balance:", ethers.formatEther(balance), "OBSC");
@@ -624,12 +617,12 @@ npx hardhat run scripts/update-oracle.ts --network arbitrum-sepolia
 
 ### Check Collateralization Status
 ```bash
-# Load stablecoin address from .env
-export STABLECOIN_FROM=$(grep "^STABLECOIN_CONTRACT_ADDRESS_FROM=" .env | cut -d= -f2)
+# Load environment variables
+source .env
 
 # Check collateralization
 npx hardhat console --network arbitrum-sepolia << EOF
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_FROM");
+const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_FROM");
 const [collateral, supply, ratio] = await stablecoin.getCollateralizationStatus();
 console.log("Collateral:", ethers.formatEther(collateral), "USD");
 console.log("Supply:", ethers.formatEther(supply), "OBSC");
@@ -766,10 +759,14 @@ Actual price: $4,013.88
 #### 9. Environment Variables Not Loading
 **Solution:** Reload your environment
 ```bash
+# From project root:
 source .env
-# Or for CCIP submodule:
-export PRIVATE_KEY=$(grep "^PRIVATE_KEY=" .env | cut -d= -f2)
+
+# Or from CCIP submodule directory:
+source ../../../../.env
 ```
+
+**💡 Note:** After running `source .env`, all variables (including `PRIVATE_KEY`, `DATASTREAMS_API_SECRET`, and all contract addresses) are automatically available in your shell.
 
 #### 10. "Cannot find module" Errors
 **Solution:** Reinstall dependencies
