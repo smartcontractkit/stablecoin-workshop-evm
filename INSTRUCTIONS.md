@@ -306,68 +306,46 @@ Expected mint: ~401.388 OBSC
 
 **💡 Note:** While the TO chain (destination) also gets an oracle in this workshop for consistency, in production scenarios, a destination-only chain doesn't strictly require oracle integration since it only receives tokens via CCIP, not collateral-based minting. However, deploying it allows testing minting on both chains.
 
-### Step 2.1: Deploy Oracle on TO Chain
+**📝 Quick Reference:** This phase repeats the same workflow as Phase 1, but on the TO chain. See Phase 1 for detailed explanations of each step.
+
+### Step 2.1: Deploy & Configure Oracle on TO Chain
 ```bash
+# Deploy Oracle
 npx hardhat run scripts/deploy-oracle.ts --network avalanche-fuji
-```
 
-**Expected Output:**
-```
-✅ Oracle deployed: 0x[your-oracle-address]
-Role: 🟢 DESTINATION (TO)
-```
-
-### Step 2.2: Update Environment with TO Chain Oracle
-```bash
+# Update .env with ORACLE_CONTRACT_ADDRESS_TO from output
 vim .env
-# Find: ORACLE_CONTRACT_ADDRESS_TO=
-# Add your oracle address from Step 2.1
-```
 
-### Step 2.3: Fund TO Chain Oracle
-```bash
+# Reload environment
+source .env
+
+# Fund Oracle with LINK (ensure your wallet has LINK on TO chain)
 npx hardhat run scripts/fund-oracle.ts --network avalanche-fuji
-```
 
-**Expected Output:**
-```
-💰 Funding Oracle with LINK tokens...
-✅ Oracle LINK balance: 10.0 LINK
-🎉 Funding complete!
-```
-
-### Step 2.4: Update TO Chain Oracle
-```bash
+# Update Oracle with live price
 npx hardhat run scripts/update-oracle.ts --network avalanche-fuji
 ```
 
-**Expected Output:**
+**Expected Output (update-oracle):**
 ```
 ✅ Transaction confirmed
 📊 Querying latest price...
 Price: $3750.17 (18 decimals)
-Timestamp: 2025-10-11T20:08:04.000Z
 ```
 
-### Step 2.5: Deploy TO Chain Stablecoin
+### Step 2.2: Deploy Stablecoin on TO Chain
 ```bash
+# Deploy Stablecoin
 npx hardhat run scripts/deploy-stablecoin.ts --network avalanche-fuji
-```
 
-**Expected Output:**
-```
-✅ Stablecoin deployed: 0x[your-stablecoin-address]
-Role: 🟢 DESTINATION (TO)
-```
-
-### Step 2.6: Update Environment with TO Chain Stablecoin
-```bash
+# Update .env with STABLECOIN_CONTRACT_ADDRESS_TO from output
 vim .env
-# Find: STABLECOIN_CONTRACT_ADDRESS_TO=
-# Add your stablecoin address from Step 2.5
+
+# Reload environment
+source .env
 ```
 
-### Step 2.7: Test Minting on TO Chain (Optional)
+### Step 2.3: Test Minting on TO Chain (Optional)
 ```bash
 npx hardhat run scripts/mint-stablecoin.ts --network avalanche-fuji
 ```
@@ -387,8 +365,8 @@ cd smart-contract-examples/ccip/cct/hardhat
 
 ### Step 3.2: Setup Environment for CCIP Scripts
 ```bash
-# Load environment variables from .env
-source ../../../../.env
+# Load environment variables from .env (symlinked)
+source .env
 ```
 
 **💡 What This Does:**
@@ -421,7 +399,7 @@ Token pool contract deployed successfully
 
 ### Step 3.4: Update Environment with FROM Chain Pool
 ```bash
-vim ../../../../.env
+vim .env
 # Find: TOKEN_POOL_ADDRESS_FROM=
 # Add your pool address from Step 3.3
 ```
@@ -431,8 +409,8 @@ vim ../../../../.env
 # Navigate back to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
 
-# Reload environment variables
-source ../../../../.env
+# Reload environment variables (symlinked)
+source .env
 
 # Deploy TokenPool on TO chain
 npx hardhat deployTokenPool \
@@ -450,7 +428,7 @@ Token pool contract deployed successfully
 
 ### Step 3.6: Update Environment with TO Chain Pool
 ```bash
-vim ../../../../.env
+vim .env
 # Find: TOKEN_POOL_ADDRESS_TO=
 # Add your pool address from Step 3.5
 ```
@@ -466,8 +444,8 @@ vim ../../../../.env
 # Navigate to CCIP submodule directory
 cd smart-contract-examples/ccip/cct/hardhat
 
-# Load all environment variables from root .env file
-source ../../../../.env
+# Load all environment variables (symlinked)
+source .env
 
 # Verify all contract addresses are loaded correctly
 echo "FROM Stablecoin: $STABLECOIN_CONTRACT_ADDRESS_FROM"
@@ -590,52 +568,57 @@ npx hardhat applyChainUpdates \
 
 **💡 Transfer Direction:** This phase demonstrates TO → FROM transfer (reverse direction) to showcase bidirectional capability.
 
-### Step 5.1: Check Your Balance on TO Chain
+### Step 5.1a: Return to Project Root
 ```bash
-# Return to project root
 cd ../../../../
+```
 
-# Load environment variables
+### Step 5.1b: Load Environment Variables
+```bash
 source .env
+```
 
-# Check your balance on TO chain
-npx hardhat console --network avalanche-fuji << EOF
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_TO");
-const [signer] = await ethers.getSigners();
-const balance = await stablecoin.balanceOf(signer.address);
-console.log("Balance on TO chain:", ethers.formatEther(balance), "OBSC");
-process.exit(0);
-EOF
+### Step 5.1c: Check Balance on TO Chain
+```bash
+npx hardhat run scripts/check-balance.ts --network avalanche-fuji
 ```
 
 **Expected Output:**
 ```
-Balance on TO chain: 385.91 OBSC
+💰 Balance on avalanche-fuji:
+   Address: 0x4fed0A5B65eac383D36E65733786386709B86be8
+   Balance: 385.91 OBSC
 ```
 
 **💡 Note:** We're checking the TO chain (destination) balance here because in this workshop example, we minted tokens on BOTH chains during Phase 1 and 2. For a real-world scenario where tokens only exist on FROM chain initially, this balance would be 0.
 
-### Step 5.2: Execute Cross-Chain Transfer
+### Step 5.2a: Navigate to CCIP Submodule
 ```bash
-# Navigate to CCIP submodule
 cd smart-contract-examples/ccip/cct/hardhat
+```
 
-# Load environment variables
-source ../../../../.env
+### Step 5.2b: Load Environment Variables
+```bash
+source .env
+```
 
-# Get your wallet address
-export YOUR_ADDRESS=$(node -e "console.log(new (require('ethers').Wallet)('$PRIVATE_KEY').address)")
-
+### Step 5.2c: Execute Cross-Chain Transfer
+```bash
 # Transfer tokens from TO chain to FROM chain
-# Amount is in wei: 10 OBSC = 10000000000000000000 wei (18 decimals)
+# Replace <YOUR_WALLET_ADDRESS> with your actual wallet address (same address as your PRIVATE_KEY)
 npx hardhat transferTokens \
   --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
   --amount 10000000000000000000 \
   --destinationchain arbitrumSepolia \
-  --receiveraddress $YOUR_ADDRESS \
+  --receiveraddress <YOUR_WALLET_ADDRESS> \
   --fee LINK \
   --network avalancheFuji
 ```
+
+**💡 Getting Your Wallet Address:**
+- If you don't know your wallet address, you can find it in MetaMask or any wallet app
+- It's the same address that corresponds to your `PRIVATE_KEY` in `.env`
+- Format: `0x1234...abcd` (42 characters starting with 0x)
 
 **💡 Amount Format:** The amount is in wei (18 decimals). To transfer 10 tokens, use `10000000000000000000`.
 
@@ -664,19 +647,15 @@ cd ../../../../
 source .env
 
 # Check balance on destination chain (FROM chain)
-npx hardhat console --network arbitrum-sepolia << EOF
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_FROM");
-const [signer] = await ethers.getSigners();
-const balance = await stablecoin.balanceOf(signer.address);
-console.log("Balance:", ethers.formatEther(balance), "OBSC");
-console.log("✅ Tokens successfully received from TO chain!");
-process.exit(0);
-EOF
+npx hardhat run scripts/check-balance.ts --network arbitrum-sepolia
 ```
 
 **Expected Output:**
 ```
-Balance: 10.0 OBSC
+💰 Balance on arbitrum-sepolia:
+   Address: 0x4fed0A5B65eac383D36E65733786386709B86be8
+   Balance: 10.0 OBSC
+
 ✅ Tokens successfully received from TO chain!
 ```
 
@@ -686,12 +665,6 @@ Balance: 10.0 OBSC
 
 ## 🧪 Verification Commands (Optional)
 
-### Check Pool Configuration
-```bash
-npx hardhat run scripts/check-pool-config.ts --network arbitrum-sepolia
-npx hardhat run scripts/check-pool-config.ts --network avalanche-fuji
-```
-
 ### Check Oracle Price
 ```bash
 npx hardhat run scripts/update-oracle.ts --network arbitrum-sepolia
@@ -699,18 +672,19 @@ npx hardhat run scripts/update-oracle.ts --network arbitrum-sepolia
 
 ### Check Collateralization Status
 ```bash
-# Load environment variables
-source .env
+npx hardhat run scripts/check-collateralization.ts --network arbitrum-sepolia
+```
 
-# Check collateralization
-npx hardhat console --network arbitrum-sepolia << EOF
-const stablecoin = await ethers.getContractAt("StablecoinERC20", "$STABLECOIN_CONTRACT_ADDRESS_FROM");
-const [collateral, supply, ratio] = await stablecoin.getCollateralizationStatus();
-console.log("Collateral:", ethers.formatEther(collateral), "USD");
-console.log("Supply:", ethers.formatEther(supply), "OBSC");
-console.log("Ratio:", Number(ratio) / 100, "%");
-process.exit(0);
-EOF
+**Expected Output:**
+```
+📊 Collateralization Status on arbitrum-sepolia:
+   Contract: 0x3eefdeF760fd03F67C17Ba8839514415f04c476b
+
+💰 Total Collateral Value: $412.56 USD
+🪙  Total Supply: 422.56 OBSC
+📈 Collateral Ratio: 97.63%
+
+⚠️  Status: Warning (50-100% collateralized)
 ```
 
 ---
@@ -857,7 +831,7 @@ Actual price: $4,013.88
 source .env
 
 # Or from CCIP submodule directory:
-source ../../../../.env
+source .env
 ```
 
 **💡 Note:** After running `source .env`, all variables (including `PRIVATE_KEY`, `DATASTREAMS_API_SECRET`, and all contract addresses) are automatically available in your shell.

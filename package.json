@@ -8,8 +8,7 @@
     "fund:oracle": "hardhat run scripts/fund-oracle.ts --network arbitrum-sepolia",
     "update:oracle": "hardhat run scripts/update-oracle.ts --network arbitrum-sepolia",
     "deploy:stablecoin": "hardhat run scripts/deploy-stablecoin.ts --network arbitrum-sepolia",
-    "mint": "hardhat run scripts/mint-stablecoin.ts --network arbitrum-sepolia",
-    "check-config": "hardhat run scripts/check-pool-config.ts"
+    "mint": "hardhat run scripts/mint-stablecoin.ts --network arbitrum-sepolia"
   },
   "keywords": [
     "chainlink",

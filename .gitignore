@@ -40,3 +40,5 @@ yarn-error.log*
 coverage/
 .coverage/
 lcov.info
+*.backup*
+env.example
