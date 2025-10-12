@@ -1,0 +1,60 @@
+{
+  "name": "Chainlink Oracle-Backed Stablecoin Workshop",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-18-bookworm",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": true
+    }
+  },
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "NomicFoundation.hardhat-solidity",
+        "ms-vscode.vscode-typescript-next"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": true
+        },
+        "solidity.compileUsingRemoteVersion": "v0.8.19",
+        "solidity.formatter": "prettier",
+        "[solidity]": {
+          "editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
+        },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  
+  "forwardPorts": [],
+  
+  "remoteUser": "node",
+  
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/node/.ssh,readonly,type=bind,consistency=cached"
+  ],
+  
+  "containerEnv": {
+    "CHAIN_FROM": "arbitrum-sepolia",
+    "CHAIN_TO": "avalanche-fuji"
+  }
+}
+
+

@@ -107,6 +107,72 @@ You should see a symlink pointing to `../../../../.env`.
 
 ## 🔧 Environment Setup (Required Before Phase 1)
 
+**Choose your setup method:**
+
+---
+
+### 🐳 **Option A: Dev Container Setup (Recommended - Easiest)**
+
+**Best for:** Workshops, beginners, anyone who wants zero setup hassle
+
+**Prerequisites:**
+- ✅ Docker Desktop installed ([Windows/Mac Download](https://www.docker.com/products/docker-desktop))
+- ✅ VSCode or Cursor installed
+- ✅ Dev Containers extension installed (Extension ID: `ms-vscode-remote.remote-containers`)
+
+**⏱️ Setup Time:** 2-3 minutes (first time)
+
+**Steps:**
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/smartcontractkit/stablecoin-workshop-evm
+   cd stablecoin-workshop-evm
+   ```
+
+2. **Open in your editor:**
+   ```bash
+   # For VSCode:
+   code .
+   
+   # For Cursor:
+   cursor .
+   ```
+
+3. **Reopen in Container:**
+   - Click "Reopen in Container" when prompted
+   - Wait 2-5 minutes for setup (automatic)
+   - Container will install Node.js, dependencies, and compile contracts
+
+4. **Configure credentials:**
+   ```bash
+   # Copy example file
+   cp .env.example .env
+   
+   # Edit with your credentials
+   vim .env
+   ```
+   Fill in: `PRIVATE_KEY`, `DATASTREAMS_API_KEY`, `DATASTREAMS_API_SECRET`
+
+5. **✅ You're ready!** Skip to [Phase 1](#️-phase-1-oracle--stablecoin-on-from-chain)
+
+**✨ Benefits:**
+- ✅ No Node.js installation needed
+- ✅ No Git symlink configuration (Windows users rejoice!)
+- ✅ Identical environment for everyone
+- ✅ All dependencies pre-installed
+- ✅ Hardhat auto-configured
+
+**📖 Detailed Guide:** See [`.devcontainer/README.md`](.devcontainer/README.md)
+
+---
+
+### 💻 **Option B: Manual Local Setup**
+
+**Best for:** Users who prefer local development or cannot use Docker
+
+**⏱️ Setup Time:** 10-15 minutes
+
 ### Step 0.1: Clone the Workshop Repository
 ```bash
 # Clone the repository

@@ -26,6 +26,9 @@ build/
 *.swo
 *~
 
+# Dev Container
+.devcontainer/.env
+
 # OS
 .DS_Store
 Thumbs.db
