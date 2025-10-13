@@ -365,6 +365,9 @@ cd smart-contract-examples/ccip/cct/hardhat
 
 ### Step 3.2: Setup Environment for CCIP Scripts
 ```bash
+# Enable child processes to pick up environment variables within Hardhat
+set -a
+
 # Load environment variables from .env (symlinked)
 source .env
 ```
@@ -406,11 +409,6 @@ vim .env
 
 ### Step 3.5: Deploy TokenPool on TO Chain
 ```bash
-# Navigate back to CCIP submodule
-cd smart-contract-examples/ccip/cct/hardhat
-
-# Reload environment variables (symlinked)
-source .env
 
 # Deploy TokenPool on TO chain
 npx hardhat deployTokenPool \
@@ -441,9 +439,6 @@ vim .env
 
 ### Step 4.1: Setup Environment Variables
 ```bash
-# Navigate to CCIP submodule directory
-cd smart-contract-examples/ccip/cct/hardhat
-
 # Load all environment variables (symlinked)
 source .env
 
