@@ -1,0 +1,3 @@
+[submodule "smart-contract-examples"]
+	path = smart-contract-examples
+	url = https://github.com/smartcontractkit/smart-contract-examples.git

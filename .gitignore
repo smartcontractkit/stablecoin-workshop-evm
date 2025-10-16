@@ -1,0 +1,47 @@
+# Local development files (not for public repo)
+CONTEXT.md
+REQUIREMENTS.md
+
+# Dependencies
+node_modules/
+smart-contract-examples/node_modules/
+
+# Hardhat
+cache/
+artifacts/
+typechain-types/
+
+# Environment variables
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dev Container
+.devcontainer/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.coverage/
+lcov.info
+*.backup*
+env.example
