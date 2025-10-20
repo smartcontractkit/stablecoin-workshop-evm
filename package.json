@@ -21,8 +21,8 @@
   "author": "Chainlink Labs",
   "license": "MIT",
   "dependencies": {
-    "@chainlink/contracts": "^1.2.0",
-    "@chainlink/contracts-ccip": "^1.5.0",
+    "@chainlink/contracts": "^1.5.0",
+    "@chainlink/contracts-ccip": "^1.6.2",
     "@chainlink/data-streams-sdk": "*",
     "@openzeppelin/contracts": "4.8.3",
     "dotenv": "^16.4.5",
