@@ -11,7 +11,7 @@ async function main() {
   const chainConfig = getChainlinkConfig(network.name);
 
   console.log(`Network: ${chainConfig.name}`);
-  console.log(`Verifier: ${chainConfig.verifier}`);
+  console.log(`Price Feed: ${chainConfig.priceFeed}`);
   console.log(`Feed ID: ${chainConfig.feedId}`);
   
   // Show chain role if configured
@@ -34,7 +34,7 @@ async function main() {
   const Oracle = await ethers.getContractFactory("DataStreamsOracle");
   console.log("⏳ Deploying contract...");
 
-  const oracle = await Oracle.deploy(chainConfig.verifier, chainConfig.feedId);
+  const oracle = await Oracle.deploy(chainConfig.priceFeed, chainConfig.feedId);
   await oracle.waitForDeployment();
 
   const oracleAddress = await oracle.getAddress();
@@ -48,7 +48,7 @@ async function main() {
     try {
       await run("verify:verify", {
         address: oracleAddress,
-        constructorArguments: [chainConfig.verifier, chainConfig.feedId],
+        constructorArguments: [chainConfig.priceFeed, chainConfig.feedId],
       });
       console.log("✅ Contract verified successfully!\n");
     } catch (error: any) {
@@ -57,7 +57,7 @@ async function main() {
       } else {
         console.log("⚠️  Verification failed:", error.message);
         console.log("You can verify manually later using:");
-        console.log(`npx hardhat verify --network ${network.name} ${oracleAddress} "${chainConfig.verifier}" "${chainConfig.feedId}"\n`);
+        console.log(`npx hardhat verify --network ${network.name} ${oracleAddress} "${chainConfig.priceFeed}" "${chainConfig.feedId}"\n`);
       }
     }
   }
@@ -79,7 +79,7 @@ async function main() {
   console.log(`Match: ${storedFeedId === chainConfig.feedId ? "✅" : "❌"}\n`);
 
   console.log("🎉 Deployment complete!");
-  console.log("Next step: Run 'npm run update:oracle' to fetch and verify first price");
+  console.log("Next step: Run 'npm run deploy:stablecoin' to deploy the stablecoin contract");
 }
 
 main()
