@@ -6,13 +6,13 @@ This workshop guides you through building a production-ready oracle-backed stabl
 ## 🎯 System Overview
 
 **What We're Building:**
-- **Oracle-backed stablecoin** using Chainlink Data Streams (ETH/USD price feeds)
+- **Oracle-backed stablecoin** using Chainlink Price Feeds (ETH/USD on-chain data)
 - **Cross-chain token transfers** via Chainlink CCIP (EVM ↔ EVM)
 - **Chain-agnostic architecture** - works with any supported EVM chain pair
-- **Real-time price verification** and on-chain storage
+- **Automated price updates** from on-chain price feed aggregators
 
 **Key Components:**
-1. **DataStreamsOracle** - Verifies and stores Chainlink Data Streams reports on-chain
+1. **DataStreamsOracle** - Reads and wraps Chainlink Price Feed data on-chain
 2. **StablecoinERC20** - Mints tokens based on ETH collateral using oracle price data
 3. **CCIP TokenPools** - Enable cross-chain Burn & Mint transfers
 4. **TokenAdminRegistry** - Manages pool registration and cross-chain routing
@@ -25,7 +25,7 @@ This workshop uses **Arbitrum Sepolia → Avalanche Fuji** as a working example,
 
 **You can deploy to any EVM chain pair** that supports:
 - ✅ Chainlink CCIP
-- ✅ Chainlink Data Streams
+- ✅ Chainlink Price Feeds
 
 **All commands in this guide use Arbitrum Sepolia and Avalanche Fuji as examples.** Simply replace these network names with your chosen chains throughout the workshop.
 
@@ -46,7 +46,6 @@ This workshop uses **Arbitrum Sepolia → Avalanche Fuji** as a working example,
 
 - **Wallet with testnet ETH** on both your chosen chains
 - **LINK tokens** for CCIP fees on both chains
-- **Chainlink Data Streams API Key and Secret** (provided by workshop instructor)
 - **Block Explorer API Keys** (optional - for contract verification on Arbiscan/Snowtrace)
 
 **Testnet Faucets:**
@@ -104,9 +103,7 @@ This workshop uses **Arbitrum Sepolia → Avalanche Fuji** as a working example,
    # Edit with your credentials
    vim .env
    ```
-   Fill in: `PRIVATE_KEY`, `DATASTREAMS_API_KEY`, `DATASTREAMS_API_SECRET`
-   
-   **🔑 Note:** Data Streams API credentials will be provided by your workshop instructor.
+   Fill in: `PRIVATE_KEY`
 
 5. **✅ You're ready!** Skip to [Phase 1](#️-phase-1-oracle--stablecoin-on-from-chain)
 
@@ -184,33 +181,15 @@ vim .env
 CHAIN_FROM=arbitrum-sepolia
 CHAIN_TO=avalanche-fuji
 
-# Step 2: Private Key & API Credentials (REQUIRED - add your credentials)
+# Step 2: Private Key (REQUIRED - add your credentials)
 PRIVATE_KEY=your_private_key_without_0x_prefix
-DATASTREAMS_API_KEY=your_chainlink_api_key
-DATASTREAMS_API_SECRET=your_chainlink_api_secret
 ```
 
-**💡 Important:** Both `CHAIN_FROM`/`CHAIN_TO` AND your credentials must be set for the workshop to work.
-
-**🔑 Data Streams Credentials:** `DATASTREAMS_API_KEY` and `DATASTREAMS_API_SECRET` will be provided by your workshop instructor.
-
-**⚠️ Special Characters in API Secrets:**
-
-If your `DATASTREAMS_API_SECRET` contains special characters (like `&`, `<`, `>`, `*`, etc.), make sure it's properly quoted:
-
-```bash
-# ✅ Correct - quoted secret
-DATASTREAMS_API_SECRET="your-secret-with-special&characters<here>"
-
-# ❌ Wrong - unquoted secret (will cause parsing errors with source .env)
-DATASTREAMS_API_SECRET=your-secret-with-special&characters<here>
-```
-
-**📝 Note:** After editing `.env`, simply run `source .env` to reload all variables. The shell and Node.js automatically strip quotes when loading variables, so both our scripts (`dotenv`) and the CCIP submodule will receive clean values.
+**💡 Important:** Both `CHAIN_FROM`/`CHAIN_TO` AND your private key must be set for the workshop to work.
 
 **✅ Pre-configured Values (Already Set in .env.example):**
-- `DATASTREAMS_REST_URL` and `DATASTREAMS_WS_URL` (testnet endpoints)
 - Default RPC URLs for both chains
+- Chainlink Price Feed addresses for supported chains
 
 **🔄 Values to Fill During Deployment:**
 - `ORACLE_CONTRACT_ADDRESS_FROM` and `ORACLE_CONTRACT_ADDRESS_TO`
@@ -258,27 +237,9 @@ vim .env
 # Add your oracle address from Step 1.1
 ```
 
-### Step 1.3: Fund Oracle with LINK
-```bash
-npx hardhat run scripts/fund-oracle.ts --network arbitrum-sepolia
-```
+**💡 Note:** With Price Feeds, the oracle automatically reads from on-chain data - no manual updates or LINK funding needed!
 
-**💡 Important:** The oracle needs LINK tokens to pay for Data Streams verification fees. Make sure your wallet has LINK on Arbitrum Sepolia.
-
-### Step 1.4: Update Oracle with Live ETH/USD Price
-```bash
-npx hardhat run scripts/update-oracle.ts --network arbitrum-sepolia
-```
-
-**Expected Output:**
-```
-✅ Transaction confirmed
-📊 Querying latest price...
-Price: $4013.88 (18 decimals)
-Timestamp: 2025-10-10T20:35:25.000Z
-```
-
-### Step 1.5: Deploy Stablecoin
+### Step 1.3: Deploy Stablecoin
 ```bash
 npx hardhat run scripts/deploy-stablecoin.ts --network arbitrum-sepolia
 ```
@@ -295,14 +256,14 @@ STABLECOIN_CONTRACT_ADDRESS_FROM=0x[your-stablecoin-address]
 **Key Address to Save:**
 - **Stablecoin Address (FROM):** Copy the address from output
 
-### Step 1.6: Update Environment with Stablecoin Address
+### Step 1.4: Update Environment with Stablecoin Address
 ```bash
 vim .env
 # Find: STABLECOIN_CONTRACT_ADDRESS_FROM=
-# Add your stablecoin address from Step 1.5
+# Add your stablecoin address from Step 1.3
 ```
 
-### Step 1.7: Test Collateral-Backed Minting
+### Step 1.5: Test Collateral-Backed Minting
 ```bash
 npx hardhat run scripts/mint-stablecoin.ts --network arbitrum-sepolia
 ```
@@ -324,7 +285,7 @@ Expected mint: ~401.388 OBSC
 🎉 Minting complete!
 ```
 
-**✅ Checkpoint:** You now have a working oracle-backed stablecoin on your FROM chain with real Chainlink Data Streams price feeds!
+**✅ Checkpoint:** You now have a working oracle-backed stablecoin on your FROM chain with real Chainlink Price Feeds!
 
 ---
 
@@ -346,20 +307,16 @@ vim .env
 
 # Reload environment
 source .env
-
-# Fund Oracle with LINK (ensure your wallet has LINK on TO chain)
-npx hardhat run scripts/fund-oracle.ts --network avalanche-fuji
-
-# Update Oracle with live price
-npx hardhat run scripts/update-oracle.ts --network avalanche-fuji
 ```
 
-**Expected Output (update-oracle):**
+**Expected Output:**
 ```
-✅ Transaction confirmed
-📊 Querying latest price...
-Price: $3750.17 (18 decimals)
+✅ Oracle deployed: 0x[your-oracle-address]
+📝 Update your .env file:
+ORACLE_CONTRACT_ADDRESS_TO=0x[your-oracle-address]
 ```
+
+**💡 Note:** The oracle automatically reads from Chainlink's on-chain Price Feed - no manual updates needed!
 
 ### Step 2.2: Deploy Stablecoin on TO Chain
 ```bash
@@ -817,8 +774,8 @@ networks: {
 - Chain Selector: https://docs.chain.link/ccip/directory/testnet/chain/your-chain
 - Router: https://docs.chain.link/ccip/directory/testnet/chain/your-chain
 - LINK Token: https://docs.chain.link/resources/link-token-contracts
-- Verifier: https://docs.chain.link/data-streams/stream-ids
-- Feed ID: https://docs.chain.link/data-streams/crypto-streams
+- Price Feed: https://docs.chain.link/data-feeds/price-feeds/addresses
+- Feed ID: Use any unique bytes32 identifier for your deployment
 
 ### Step B: Follow Same Deployment Steps
 
@@ -880,14 +837,7 @@ Replace `<ORACLE_ADDRESS>` and `<STABLECOIN_ADDRESS>` with your deployed contrac
 # Select your chain and request LINK
 ```
 
-#### 2. "execution reverted" During Oracle Update
-**Problem:** Oracle doesn't have enough LINK for verification fees
-**Solution:** Fund the oracle
-```bash
-npx hardhat run scripts/fund-oracle.ts --network [your-network]
-```
-
-#### 3. "Network doesn't exist" in CCIP Submodule
+#### 2. "Network doesn't exist" in CCIP Submodule
 **Problem:** CCIP submodule uses camelCase network names
 **Solution:** Use correct network names
 ```bash
@@ -898,7 +848,7 @@ npx hardhat run scripts/fund-oracle.ts --network [your-network]
 # ✅ Correct: avalancheFuji
 ```
 
-#### 4. Pool Doesn't Have Mint/Burn Roles
+#### 3. Pool Doesn't Have Mint/Burn Roles
 **Problem:** This should not happen if TokenPool was deployed successfully
 **Check:** Verify roles were granted during deployment
 ```bash
@@ -916,18 +866,18 @@ const stablecoin = await ethers.getContractAt("StablecoinERC20", "[stablecoin-ad
 await stablecoin.grantMintAndBurnRoles("[pool-address]");
 ```
 
-#### 5. "Blockhash not found" or RPC Errors
+#### 4. "Blockhash not found" or RPC Errors
 **Problem:** Temporary network congestion
 **Solution:** Wait a few seconds and retry the command
 
-#### 6. Transfer Shows Wrong Receiver Address
+#### 5. Transfer Shows Wrong Receiver Address
 **Solution:** Ensure you're using `--receiveraddress` parameter
 ```bash
 # ✅ Correct
 npx hardhat transferTokens --receiveraddress 0x[your-address] ...
 ```
 
-#### 7. Price Seems Too Large
+#### 6. Price Seems Too Large
 **Problem:** Crypto prices use 18 decimals, not 8
 **Solution:** This is correct - divide by 1e18
 ```
@@ -935,7 +885,7 @@ Raw price: 4013880000000000000000
 Actual price: $4,013.88
 ```
 
-#### 8. Transaction Fails with "insufficient funds"
+#### 7. Transaction Fails with "insufficient funds"
 **Solution:** Get more testnet ETH from faucet for your chain
 ```bash
 # Visit: https://faucets.chain.link/
@@ -952,7 +902,7 @@ source .env
 source .env
 ```
 
-**💡 Note:** After running `source .env`, all variables (including `PRIVATE_KEY`, `DATASTREAMS_API_SECRET`, and all contract addresses) are automatically available in your shell.
+**💡 Note:** After running `source .env`, all variables (including `PRIVATE_KEY` and all contract addresses) are automatically available in your shell.
 
 #### 10. "Cannot find module" Errors
 **Solution:** Reinstall dependencies
@@ -967,9 +917,8 @@ npm install
 ## 📚 Additional Resources
 
 ### Chainlink Documentation
-- **Data Streams:** https://docs.chain.link/data-streams
+- **Price Feeds:** https://docs.chain.link/data-feeds/price-feeds
 - **CCIP:** https://docs.chain.link/ccip
-- **Price Feeds:** https://docs.chain.link/data-feeds
 
 ### Explorers
 - **CCIP Explorer:** https://ccip.chain.link/
@@ -988,7 +937,7 @@ npm install
 You've successfully built and deployed a production-ready oracle-backed stablecoin with cross-chain CCIP integration!
 
 **What You've Learned:**
-- ✅ Integrating Chainlink Data Streams for real-time price feeds
+- ✅ Integrating Chainlink Price Feeds for on-chain price data
 - ✅ Building collateral-backed stablecoins with oracle integration
 - ✅ Deploying CCIP TokenPools for cross-chain transfers
 - ✅ Configuring TokenAdminRegistry and cross-chain routes

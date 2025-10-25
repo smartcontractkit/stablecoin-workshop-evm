@@ -1,19 +1,19 @@
 # Chainlink Oracle-Backed Cross-Chain Stablecoin Workshop
 ## EVM Implementation
 
-> **📝 Note:** This is the **EVM version** of the Chainlink Data Streams-backed cross-chain stablecoin workshop. For the **Solana (SVM) version**, see [solana-stablecoin-workshop](https://github.com/smartcontractkit/solana-stablecoin-workshop).
+> **📝 Note:** This is the **EVM version** of the Chainlink Price Feed-backed cross-chain stablecoin workshop. For the **Solana (SVM) version**, see [solana-stablecoin-workshop](https://github.com/smartcontractkit/solana-stablecoin-workshop).
 
 ## 🎯 Overview
 
-This repository contains a **complete workshop implementation** of an **oracle-backed stablecoin system** that integrates **Chainlink Data Streams** for real-time ETH/USD price feeds and **Chainlink CCIP** for cross-chain token transfers between EVM chains.
+This repository contains a **complete workshop implementation** of an **oracle-backed stablecoin system** that integrates **Chainlink Price Feeds** for real-time ETH/USD price data and **Chainlink CCIP** for cross-chain token transfers between EVM chains.
 
 **Built on Official Chainlink Tools:**
-- **[Chainlink Data Streams](https://docs.chain.link/data-streams)** - Real-time ETH/USD price feed integration
+- **[Chainlink Price Feeds](https://docs.chain.link/data-feeds)** - On-chain ETH/USD price feed integration
 - **[Chainlink CCIP](https://docs.chain.link/ccip)** - Cross-chain token transfer protocol
 
 ### Workshop Content
-- **Real-time price integration** via Chainlink Data Streams
-- **Oracle contract** for on-chain price verification and storage
+- **On-chain price integration** via Chainlink Price Feeds
+- **Oracle wrapper contract** for reading on-chain price data
 - **Stablecoin contract** with ETH collateral management and minting logic
 - **Cross-chain transfers** using Chainlink CCIP Burn & Mint pools
 - **Chain-agnostic architecture** - deploy to any supported EVM chain pair
@@ -48,13 +48,12 @@ stablecoin-workshop-evm/
 ├── INSTRUCTIONS.md              # Complete step-by-step workshop guide
 ├── .devcontainer/               # Dev Container configuration (optional)
 ├── contracts/                   # Solidity smart contracts
-│   ├── DataStreamsOracle.sol    # Chainlink Data Streams oracle
+│   ├── DataStreamsOracle.sol    # Chainlink Price Feed wrapper oracle
 │   ├── StablecoinERC20.sol      # Oracle-backed stablecoin
 │   └── interfaces/              # Contract interfaces
 ├── scripts/                     # Deployment and utility scripts
 │   ├── deploy-oracle.ts         # Deploy DataStreamsOracle
 │   ├── deploy-stablecoin.ts     # Deploy StablecoinERC20
-│   ├── update-oracle.ts         # Update oracle with latest price
 │   ├── mint-stablecoin.ts       # Mint stablecoin with ETH collateral
 │   ├── check-balance.ts         # Check stablecoin balance
 │   ├── check-collateralization.ts # Check collateral status
@@ -68,22 +67,22 @@ stablecoin-workshop-evm/
 ```mermaid
 graph TD
     subgraph "📊 Price Oracle"
-        DS[Chainlink Data Streams<br/>Real-time ETH/USD]
-        DO[DataStreamsOracle<br/>Verifies & Stores]
-        
-        DS --> DO
+        PF[Chainlink Price Feed<br/>On-chain ETH/USD]
+        DO[DataStreamsOracle<br/>Reads & Wraps]
+
+        PF --> DO
     end
-    
+
     subgraph "🪙 Stablecoin System"
         SC[StablecoinERC20<br/>Mint/Burn with ETH Collateral]
-        
+
         DO --> SC
     end
-    
+
     subgraph "🌉 Cross-Chain CCIP"
         FROM[FROM Chain Pool<br/>Burn on transfer out]
         TO[TO Chain Pool<br/>Mint on transfer in]
-        
+
         SC --> FROM
         FROM <--> TO
     end
@@ -94,9 +93,9 @@ graph TD
 The workshop covers end-to-end deployment across two EVM chains:
 
 ### Phase 1: FROM Chain Deployment
-- Deploy DataStreamsOracle contract
+- Deploy DataStreamsOracle contract (wraps Chainlink Price Feed)
 - Deploy StablecoinERC20 contract
-- Configure oracle with price feed
+- Oracle automatically reads from on-chain price feed
 - Mint stablecoin with ETH collateral
 
 ### Phase 2: TO Chain Deployment
@@ -117,7 +116,7 @@ The workshop covers end-to-end deployment across two EVM chains:
 
 By completing this workshop, you will learn how to:
 
-- ✅ Integrate Chainlink Data Streams for real-time price feeds
+- ✅ Integrate Chainlink Price Feeds for on-chain price data
 - ✅ Build an oracle-backed stablecoin with collateral management
 - ✅ Deploy contracts across multiple EVM chains
 - ✅ Configure Chainlink CCIP for cross-chain token transfers
@@ -126,7 +125,7 @@ By completing this workshop, you will learn how to:
 
 ## 🔗 Resources
 
-- [Chainlink Data Streams Documentation](https://docs.chain.link/data-streams)
+- [Chainlink Price Feeds Documentation](https://docs.chain.link/data-feeds/price-feeds)
 - [Chainlink CCIP Documentation](https://docs.chain.link/ccip)
 - [Hardhat Documentation](https://hardhat.org/docs)
 - [Solidity Documentation](https://docs.soliditylang.org/)

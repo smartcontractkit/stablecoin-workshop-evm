@@ -4,7 +4,7 @@ export const CHAINLINK_CONFIGS = {
     chainSelector: "3478487238524512106",
     ccipRouter: "0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165",
     linkToken: "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
-    verifier: "0x2ff010DEbC1297f19579B4246cad07bd24F2488A",
+    priceFeed: "0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165", // ETH/USD Price Feed
     feedId: "0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782",
     explorerUrl: "https://sepolia.arbiscan.io",
   },
@@ -13,7 +13,7 @@ export const CHAINLINK_CONFIGS = {
     chainSelector: "14767482510784806043",
     ccipRouter: "0xF694E193200268f9a4868e4Aa017A0118C9a8177",
     linkToken: "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846",
-    verifier: "0x2bf612C65f5a4d388E687948bb2CF842FFb8aBB3",
+    priceFeed: "0x86d67c3D38D2bCeE722E601025C25a575021c6EA", // ETH/USD Price Feed
     feedId: "0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782",
     explorerUrl: "https://testnet.snowtrace.io",
   },

@@ -1,18 +1,16 @@
 {
   "name": "@chainlink/stablecoin-workshop-evm",
   "version": "1.0.0",
-  "description": "Chainlink Data Streams Oracle-Backed Stablecoin Workshop (EVM→EVM)",
+  "description": "Chainlink Price Feed Oracle-Backed Stablecoin Workshop (EVM→EVM)",
   "scripts": {
     "compile": "hardhat compile",
     "deploy:oracle": "hardhat run scripts/deploy-oracle.ts --network arbitrum-sepolia",
-    "fund:oracle": "hardhat run scripts/fund-oracle.ts --network arbitrum-sepolia",
-    "update:oracle": "hardhat run scripts/update-oracle.ts --network arbitrum-sepolia",
     "deploy:stablecoin": "hardhat run scripts/deploy-stablecoin.ts --network arbitrum-sepolia",
     "mint": "hardhat run scripts/mint-stablecoin.ts --network arbitrum-sepolia"
   },
   "keywords": [
     "chainlink",
-    "data-streams",
+    "price-feeds",
     "ccip",
     "stablecoin",
     "oracle",
@@ -23,7 +21,6 @@
   "dependencies": {
     "@chainlink/contracts": "^1.2.0",
     "@chainlink/contracts-ccip": "^1.5.0",
-    "@chainlink/data-streams-sdk": "*",
     "@openzeppelin/contracts": "4.8.3",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.0"
