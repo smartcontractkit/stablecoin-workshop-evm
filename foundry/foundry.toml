@@ -1,0 +1,12 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+remappings = [
+  '@chainlink/contracts-ccip/=node_modules/@chainlink/contracts-ccip/',
+  '@chainlink/contracts/=node_modules/@chainlink/contracts/',
+  '@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/',
+  'stablecoin-workshop-evm/=/Users/woogieboogie/github/stablecoin-workshop-evm/stablecoin-workshop-evm/',
+]
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

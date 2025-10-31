@@ -382,246 +382,167 @@ npx hardhat run scripts/mint-stablecoin.ts --network avalanche-fuji
 
 ---
 
-## 🌉 Phase 3: CCIP TokenPool Deployment
+## 🌉 Phase 3 & 4: Automated CCIP Deployment (Foundry)
 
-**💡 Network Names:** CCIP submodule uses camelCase (e.g., `arbitrumSepolia`, `avalancheFuji`). Our custom scripts use kebab-case (e.g., `arbitrum-sepolia`). Both refer to the same networks.
+**⚡ New:** We've automated the entire CCIP TokenPool deployment and configuration process into a single Foundry script that replaces 30+ manual commands!
 
-### Step 3.1: Navigate to CCIP Submodule
-```bash
-cd smart-contract-examples/ccip/cct/hardhat
-```
+### What This Phase Does
 
-### Step 3.2a: Install CCIP Dependencies
-```bash
-npm install
-```
+The automated script handles **all** of the following on both chains:
+1. ✅ Deploy `BurnMintTokenPool` contracts
+2. ✅ Grant mint/burn roles to pools
+3. ✅ Register token admins via `RegistryModuleOwnerCustom`
+4. ✅ Accept admin roles in `TokenAdminRegistry`
+5. ✅ Set pools in `TokenAdminRegistry`
+6. ✅ Configure bidirectional cross-chain routes
 
-### Step 3.2b: Setup Environment for CCIP Scripts
-```bash
-# Enable child processes to pick up environment variables within Hardhat
-set -a
-
-# Load environment variables from .env (symlinked)
-source .env
-```
-
-**💡 What This Does:**
-- Loads all required environment variables from your `.env` file
-- The CCIP submodule Hardhat tasks can now access `$PRIVATE_KEY`, RPC URLs, and all deployed contract addresses
-
-### Step 3.2c: Compile CCIP Contracts
-```bash
-# Compile contracts to ensure artifacts are available
-npx hardhat compile
-```
-
-**💡 Why This Is Needed:** The CCIP deployment tasks require compiled contract artifacts to deploy TokenPools.
-
-### Step 3.2d: Configure RPC URLs (If Not Already Set)
-
-Before deploying TokenPools, ensure your RPC URLs are uncommented in `.env`:
-
-```bash
-# Edit .env (symlinked to root .env)
-vim .env
-```
-
-**Uncomment these lines in your `.env` file:**
-```bash
-# For Arbitrum Sepolia (FROM chain)
-ARBITRUM_SEPOLIA_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
-
-# For Avalanche Fuji (TO chain)
-AVALANCHE_FUJI_RPC_URL=https://avalanche-fuji-c-chain-rpc.publicnode.com
-```
-
-**💡 Tip:** If you're using different chains, uncomment the appropriate RPC URLs for your chain pair.
-
-```bash
-# Reload environment variables to pick up RPC URLs
-source .env
-```
-
-### Step 3.3: Deploy TokenPool on FROM Chain
-```bash
-# Deploy TokenPool (using $STABLECOIN_CONTRACT_ADDRESS_FROM from sourced .env)
-npx hardhat deployTokenPool \
-  --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM \
-  --pooltype burnMint
-```
-
-**Expected Output:**
-```
-Token pool deployed to: 0x[your-pool-address]
-Granting mint and burn roles to 0x[your-pool-address]...
-Token pool contract deployed successfully
-```
-
-**✨ What Happened:**
-- TokenPool was deployed successfully
-- The deployment script automatically granted mint and burn roles to the pool
-- Our `StablecoinERC20` contract has a `grantMintAndBurnRoles()` wrapper that enables this seamless integration
-
-**Key Address to Save:**
-- **TokenPool Address (FROM):** Copy the pool address from output
-
-### Step 3.4: Update Environment with FROM Chain Pool
-```bash
-vim .env
-# Find: TOKEN_POOL_ADDRESS_FROM=
-# Add your pool address from Step 3.3
-```
-
-### Step 3.5: Deploy TokenPool on TO Chain
-```bash
-
-# Deploy TokenPool on TO chain
-npx hardhat deployTokenPool \
-  --network avalancheFuji \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
-  --pooltype burnMint
-```
-
-**Expected Output:**
-```
-Token pool deployed to: 0x[your-pool-address]
-Granting mint and burn roles to 0x[your-pool-address]...
-Token pool contract deployed successfully
-```
-
-### Step 3.6: Update Environment with TO Chain Pool
-```bash
-vim .env
-# Find: TOKEN_POOL_ADDRESS_TO=
-# Add your pool address from Step 3.5
-```
-
-**✅ Checkpoint:** Both TokenPools are deployed with proper mint/burn permissions!
+**Time savings:** ~30 minutes → ~5 minutes
 
 ---
 
-## 🔗 Phase 4: CCIP Registration & Configuration
-
-### Step 4.1: Setup Environment Variables
+### Step 3.1: Navigate to Foundry Directory
 ```bash
-# Load all environment variables (symlinked)
-source .env
-
-# Verify all contract addresses are loaded correctly
-echo "FROM Stablecoin: $STABLECOIN_CONTRACT_ADDRESS_FROM"
-echo "FROM Pool: $TOKEN_POOL_ADDRESS_FROM"
-echo "TO Stablecoin: $STABLECOIN_CONTRACT_ADDRESS_TO"
-echo "TO Pool: $TOKEN_POOL_ADDRESS_TO"
+cd foundry
 ```
 
-### Step 4.2: Claim Admin on FROM Chain
+### Step 3.2: Ensure RPC URLs are Configured
+
+Make sure your `.env` file has the RPC URLs set:
+
 ```bash
-npx hardhat claimAdmin \
-  --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM \
-  --mode owner
+# Edit .env if needed
+vim ../.env
+```
+
+**Required environment variables:**
+```bash
+PRIVATE_KEY=your_private_key
+ARBITRUM_SEPOLIA_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
+AVALANCHE_FUJI_RPC_URL=https://avalanche-fuji-c-chain-rpc.publicnode.com
+STABLECOIN_CONTRACT_ADDRESS_FROM=0x...  # From Phase 1
+STABLECOIN_CONTRACT_ADDRESS_TO=0x...    # From Phase 2
+```
+
+### Step 3.3: Dry Run (Recommended)
+
+Test the deployment without broadcasting transactions:
+
+```bash
+forge script script/DeployCCIP.s.sol:DeployCCIP \
+  --rpc-url $ARBITRUM_SEPOLIA_RPC_URL
+```
+
+**💡 What to Expect:**
+- Simulation of all deployment steps
+- Gas estimates for each transaction
+- No actual transactions broadcasted
+
+### Step 3.4: Execute Automated Deployment
+
+Run the full automated deployment:
+
+```bash
+forge script script/DeployCCIP.s.sol:DeployCCIP \
+  --rpc-url $ARBITRUM_SEPOLIA_RPC_URL \
+  --broadcast
 ```
 
 **Expected Output:**
 ```
-✅ Successfully claimed admin using owner mode
+== Logs ==
+  TokenPool deployed at: 0x[pool-address-from]
+  Granted mint/burn roles to pool
+  Registering admin for token: 0x[stablecoin-from]
+  Admin registered
+  Accepting admin role for token: 0x[stablecoin-from]
+  Admin role accepted
+  Setting pool for token: 0x[stablecoin-from]
+  Pool address: 0x[pool-address-from]
+  Pool set in TokenAdminRegistry
+  
+  [Switches to Avalanche Fuji]
+  
+  TokenPool deployed at: 0x[pool-address-to]
+  Granted mint/burn roles to pool
+  Registering admin for token: 0x[stablecoin-to]
+  Admin registered
+  Accepting admin role for token: 0x[stablecoin-to]
+  Admin role accepted
+  Setting pool for token: 0x[stablecoin-to]
+  Pool address: 0x[pool-address-to]
+  Pool set in TokenAdminRegistry
+  
+  Applying chain updates to pool: 0x[pool-address-from]
+  Remote chain selector: 14767482510784806043
+  Remote pool: 0x[pool-address-to]
+  Remote token: 0x[stablecoin-to]
+  Chain updates applied successfully
+  
+  Applying chain updates to pool: 0x[pool-address-to]
+  Remote chain selector: 3478487238524512106
+  Remote pool: 0x[pool-address-from]
+  Remote token: 0x[stablecoin-from]
+  Chain updates applied successfully
+
+Script ran successfully.
 ```
 
-### Step 4.3: Claim Admin on TO Chain
+### Step 3.5: Save Pool Addresses
+
+Copy the pool addresses from the output and update your `.env`:
+
 ```bash
-npx hardhat claimAdmin \
-  --network avalancheFuji \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
-  --mode owner
+# Navigate back to project root
+cd ..
+
+# Edit .env
+vim .env
 ```
 
-**Expected Output:**
-```
-✅ Successfully claimed admin using owner mode
-```
-
-### Step 4.4: Accept Admin Role on FROM Chain
+Add the pool addresses:
 ```bash
-npx hardhat acceptAdminRole \
-  --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM
+TOKEN_POOL_ADDRESS_FROM=0x...  # First pool address from output
+TOKEN_POOL_ADDRESS_TO=0x...    # Second pool address from output
 ```
 
-**Expected Output:**
-```
-Accepted admin role for token [...] tx: 0x[...]
-```
+### Step 3.6: Verify Deployment
 
-### Step 4.5: Accept Admin Role on TO Chain
+Check the deployment details in the broadcast logs:
+
 ```bash
-npx hardhat acceptAdminRole \
-  --network avalancheFuji \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO
+# View the detailed deployment log
+cat foundry/broadcast/multi/DeployCCIP.s.sol-latest/run.json | jq '.transactions[] | {to, contractAddress, function}'
 ```
 
-**Expected Output:**
-```
-Accepted admin role for token [...] tx: 0x[...]
-```
-
-### Step 4.6: Set Pool on FROM Chain
-```bash
-npx hardhat setPool \
-  --network arbitrumSepolia \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM \
-  --pooladdress $TOKEN_POOL_ADDRESS_FROM
-```
-
-**Expected Output:**
-```
-Pool set for token [...] to [...]
-```
-
-### Step 4.7: Set Pool on TO Chain
-```bash
-npx hardhat setPool \
-  --network avalancheFuji \
-  --tokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO \
-  --pooladdress $TOKEN_POOL_ADDRESS_TO
-```
-
-**Expected Output:**
-```
-Pool set for token [...] to [...]
-```
-
-### Step 4.8: Configure FROM → TO Route
-```bash
-npx hardhat applyChainUpdates \
-  --network arbitrumSepolia \
-  --pooladdress $TOKEN_POOL_ADDRESS_FROM \
-  --remotechain avalancheFuji \
-  --remotepooladdresses $TOKEN_POOL_ADDRESS_TO \
-  --remotetokenaddress $STABLECOIN_CONTRACT_ADDRESS_TO
-```
-
-**Expected Output:**
-```
-✅ Chain update applied successfully!
-```
-
-### Step 4.9: Configure TO → FROM Route
-```bash
-npx hardhat applyChainUpdates \
-  --network avalancheFuji \
-  --pooladdress $TOKEN_POOL_ADDRESS_TO \
-  --remotechain arbitrumSepolia \
-  --remotepooladdresses $TOKEN_POOL_ADDRESS_FROM \
-  --remotetokenaddress $STABLECOIN_CONTRACT_ADDRESS_FROM
-```
-
-**Expected Output:**
-```
-✅ Chain update applied successfully!
-```
+Or view on block explorers:
+- **Arbitrum Sepolia:** https://sepolia.arbiscan.io/
+- **Avalanche Fuji:** https://testnet.snowtrace.io/
 
 **✅ Checkpoint:** CCIP is fully configured for bidirectional cross-chain transfers!
+
+---
+
+### 🐛 Troubleshooting
+
+#### "Insufficient funds for gas"
+- Ensure your wallet has testnet ETH on both chains
+- Get from: https://faucets.chain.link/
+
+#### "AlreadyRegistered" error
+- This means the token was already registered in a previous deployment
+- For fresh tokens (standard workflow), this won't occur
+- If testing with existing tokens, you may need to use different stablecoin addresses
+
+#### "Failed to grant mint/burn roles"
+- Ensure you're the owner of the stablecoin contracts
+- Check that stablecoin addresses in `.env` are correct
+
+#### Want to see the technical details?
+Check out:
+- **`foundry/README.md`** - Overview of the automation
+- **`foundry/VALIDATION.md`** - Detailed validation report
+- **`foundry/E2E_TEST_RESULTS.md`** - Dry-run test results
+- **`foundry/QUICK_START.md`** - Quick reference guide
 
 ---
 

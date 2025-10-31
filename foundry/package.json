@@ -1,0 +1,14 @@
+{
+  "name": "foundry-ccip",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@chainlink/contracts": "1.4.0",
+    "@chainlink/contracts-ccip": "1.6.1",
+    "@openzeppelin/contracts": "^5.4.0"
+  }
+}
